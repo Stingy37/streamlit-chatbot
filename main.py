@@ -42,11 +42,15 @@ else:
     st.session_state.messages = []
 
 # File uploader for PDFs, .py files, and images
-uploaded_file = st.file_uploader("Upload a file", type=["pdf", "py", "png", "jpg", "jpeg"])
+uploaded_files = st.file_uploader(
+    "Upload files",
+    type=["pdf", "py", "png", "jpg", "jpeg"],
+    accept_multiple_files=True
+)
 
 # Handle file upload
-if uploaded_file is not None and st.session_state.active_chat_id:
-    handle_file_upload(uploaded_file, st.session_state.active_chat_id)
+if uploaded_files is not None and st.session_state.active_chat_id:
+    handle_file_upload(uploaded_files, st.session_state.active_chat_id)
 
 # Display chat history
 display_chat_history()
