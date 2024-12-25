@@ -21,7 +21,7 @@ if 'logging_initialized' not in st.session_state:
     initialize_logger()
 
 # Set custom backgrounds and styles 
-set_custom_background('/Users/andyshi/Documents/gpt_o1_access/background_art/background_2.jpg')
+set_custom_background('background_art/background_2.jpg')
 
 # Initialize the database
 init_db()
