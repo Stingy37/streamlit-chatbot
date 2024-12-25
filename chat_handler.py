@@ -21,6 +21,7 @@ def sidebar_chat_sessions():
     st.sidebar.title("Chat Sessions")
     # Connect to the database
     conn = sqlite3.connect("chat_history.db")
+    conn.execute("PRAGMA foreign_keys = ON;")  # Enable foreign key constraints
     cursor = conn.cursor()
     # Fetch all chats
     cursor.execute("SELECT id, name FROM chats ORDER BY created_at DESC")
@@ -74,16 +75,20 @@ def sidebar_chat_sessions():
     if st.session_state.active_chat_id:
         if st.sidebar.button("Delete Chat"):
             chat_id = st.session_state.active_chat_id
-            cursor.execute("DELETE FROM messages WHERE chat_id = ?", (chat_id,))
-            cursor.execute("DELETE FROM chats WHERE id = ?", (chat_id,))
-            conn.commit()
-            st.sidebar.success("Chat deleted.")
-            # Remove document_text for this chat
-            if chat_id in st.session_state.document_text:
-                del st.session_state.document_text[chat_id]
-            st.session_state.active_chat_id = None
-            st.session_state.messages = []
-            st.rerun()
+            try:
+                # Delete the chat; associated messages will be deleted automatically due to ON DELETE CASCADE
+                cursor.execute("DELETE FROM chats WHERE id = ?", (chat_id,))
+                conn.commit()
+                st.sidebar.success("Chat deleted.")
+                # Remove document_text for this chat
+                if chat_id in st.session_state.document_text:
+                    del st.session_state.document_text[chat_id]
+                st.session_state.active_chat_id = None
+                st.session_state.messages = []
+                st.rerun()
+            except Exception as e:
+                logging.error(f"Error deleting chat: {e}")
+                st.sidebar.error(f"An error occurred while deleting the chat: {e}")
 
     # Rename chat
     if st.session_state.active_chat_id:
