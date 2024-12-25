@@ -2,7 +2,7 @@
 venv/
 
 # Environment variables
-.env
+.streamlit/
 
 # Logs
 *.log

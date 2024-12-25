@@ -1,7 +1,5 @@
 import streamlit as st
 import openai
-from dotenv import load_dotenv
-import os
 
 from style import set_custom_background
 from database import init_db, load_chat_messages
@@ -15,8 +13,7 @@ from file_upload import handle_file_upload
 from logger import initialize_logger
 
 # Load environment variables
-load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY") 
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 # Initialize logging
 if 'logging_initialized' not in st.session_state:
