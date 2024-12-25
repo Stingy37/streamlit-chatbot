@@ -2,7 +2,7 @@
 venv/
 
 # Environment variables
-.streamlit/
+*secrets.toml
 
 # Logs
 *.log
