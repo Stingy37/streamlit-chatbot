@@ -45,11 +45,12 @@ else:
 uploaded_files = st.file_uploader(
     "Upload files",
     type=["pdf", "py", "png", "jpg", "jpeg"],
-    accept_multiple_files=True
+    accept_multiple_files=True,
+    key=f"file_uploader_{st.session_state.active_chat_id}"  # Unique key per chat_id
 )
 
 # Handle file upload
-if uploaded_files is not None and st.session_state.active_chat_id:
+if uploaded_files and st.session_state.active_chat_id:
     handle_file_upload(uploaded_files, st.session_state.active_chat_id)
 
 # Display chat history

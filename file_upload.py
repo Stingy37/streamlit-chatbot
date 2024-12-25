@@ -3,6 +3,7 @@ import streamlit as st
 import PyPDF2
 import pytesseract
 from PIL import Image
+from database import save_document_text  # Import the function to save document_text
 
 def handle_file_upload(uploaded_files, chat_id):
     context_parts = []
@@ -23,6 +24,8 @@ def handle_file_upload(uploaded_files, chat_id):
         combined_context = "\n".join(context_parts)
         # Store the combined context for this chat session
         st.session_state.document_text[chat_id] = combined_context
+        # Save to database
+        save_document_text(chat_id, combined_context)
         st.success("Files extracted and stored.")
 
 def extract_file_content(file_like, filename, file_extension):

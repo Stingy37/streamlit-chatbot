@@ -3,7 +3,7 @@ import sqlite3
 import openai
 import logging
 import json
-from database import load_chat_messages, save_message
+from database import load_chat_messages, save_message, load_document_text
 
 def initialize_session_state():
     if "model" not in st.session_state:
@@ -12,6 +12,10 @@ def initialize_session_state():
         st.session_state.document_text = {}  # To store document texts per chat_id
     if "active_chat_id" not in st.session_state:
         st.session_state.active_chat_id = None
+    if "previous_chat_id" not in st.session_state:
+        st.session_state.previous_chat_id = None
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
 
 def sidebar_chat_sessions():
     st.sidebar.title("Chat Sessions")
@@ -23,7 +27,7 @@ def sidebar_chat_sessions():
     chats = cursor.fetchall()
     chat_names = [chat[1] for chat in chats]
     chat_ids = [chat[0] for chat in chats]
-    # Select or create a chat
+    # Select a chat
     if chats:
         selected_chat_index = st.sidebar.selectbox(
             "Select a chat session",
@@ -34,13 +38,22 @@ def sidebar_chat_sessions():
     else:
         st.session_state.active_chat_id = None
         st.sidebar.info("No chat sessions. Create a new one below.")
-    # Button to create a new chat
+
+    # Detect active chat changes
+    if st.session_state.active_chat_id != st.session_state.get("previous_chat_id"):
+        st.session_state.previous_chat_id = st.session_state.active_chat_id
+
+        # Load messages from the database for the active chat
+        st.session_state.messages = load_chat_messages(st.session_state.active_chat_id)
+
+        # Load document_text from the database
+        document_text = load_document_text(st.session_state.active_chat_id)
+        st.session_state.document_text[st.session_state.active_chat_id] = document_text
+
+    # Create a new chat
     new_chat_name = st.sidebar.text_input("New chat name")
     if st.sidebar.button("Create New Chat"):
         if new_chat_name.strip():
-            # Connect to the database
-            conn = sqlite3.connect("chat_history.db")
-            cursor = conn.cursor()
             # Check if the chat name already exists
             cursor.execute("SELECT id FROM chats WHERE name = ?", (new_chat_name.strip(),))
             existing_chat = cursor.fetchone()
@@ -52,21 +65,18 @@ def sidebar_chat_sessions():
                 st.sidebar.success(f"Chat '{new_chat_name}' created.")
                 st.session_state.active_chat_id = cursor.lastrowid  # Set the new chat as active
                 st.session_state.messages = []  # Clear messages for the new chat
+                st.session_state.document_text[st.session_state.active_chat_id] = ''  # Initialize document_text for the new chat
                 st.rerun()
-            # Close the database connection
-            conn.close()
         else:
             st.sidebar.error("Please enter a chat name.")
+
     # Delete chat
     if st.session_state.active_chat_id:
         if st.sidebar.button("Delete Chat"):
             chat_id = st.session_state.active_chat_id
-            conn = sqlite3.connect("chat_history.db")
-            cursor = conn.cursor()
             cursor.execute("DELETE FROM messages WHERE chat_id = ?", (chat_id,))
             cursor.execute("DELETE FROM chats WHERE id = ?", (chat_id,))
             conn.commit()
-            conn.close()
             st.sidebar.success("Chat deleted.")
             # Remove document_text for this chat
             if chat_id in st.session_state.document_text:
@@ -74,22 +84,21 @@ def sidebar_chat_sessions():
             st.session_state.active_chat_id = None
             st.session_state.messages = []
             st.rerun()
+
     # Rename chat
     if st.session_state.active_chat_id:
         rename_chat_name = st.sidebar.text_input("Rename chat")
         if st.sidebar.button("Rename"):
             if rename_chat_name.strip():
-                conn = sqlite3.connect("chat_history.db")
-                cursor = conn.cursor()
                 cursor.execute("""
                     UPDATE chats SET name = ? WHERE id = ?
                 """, (rename_chat_name.strip(), st.session_state.active_chat_id))
                 conn.commit()
-                conn.close()
                 st.sidebar.success("Chat renamed.")
                 st.rerun()
             else:
                 st.sidebar.error("Please enter a valid chat name.")
+
     # Close the database connection
     conn.close()
 
@@ -104,12 +113,12 @@ def handle_user_input():
         save_message(chat_id, user_message["role"], user_message["content"])
         # Prepare messages for the API call
         messages = []
+        # Get the document_text specific to the current chat_id
+        document_text = st.session_state.document_text.get(chat_id, "")
         for message in st.session_state.messages:
             role = message["role"]
             content = message["content"]
             if role == "user":
-                # Get the document_text specific to the current chat_id
-                document_text = st.session_state.document_text.get(chat_id, "")
                 if document_text:
                     user_input_with_context = (
                         f"Answer my question based on the following text:\n\n"
