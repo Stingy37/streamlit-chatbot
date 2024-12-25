@@ -15,5 +15,6 @@ def initialize_logger():
         level=logging.INFO,
         filename='app.log',
         filemode='w',
-        format='%(asctime)s - %(levelname)s - %(message)s'
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        force=True
     )
