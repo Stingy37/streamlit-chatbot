@@ -13,7 +13,6 @@ from file_upload import handle_file_upload
 from logger import initialize_logger
 
 # Load environment variables
-openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 # Initialize logging
 if 'logging_initialized' not in st.session_state:

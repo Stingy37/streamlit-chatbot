@@ -1,6 +1,8 @@
 import streamlit as st
 import sqlite3
-import openai
+from openai import OpenAI
+
+client = OpenAI()
 import logging
 import json
 from database import load_chat_messages, save_message, load_document_text
@@ -148,11 +150,9 @@ def handle_user_input():
         try:
             # Generate GPT response
             with st.spinner("Assistant is typing..."):
-                response = openai.ChatCompletion.create(
-                    model=st.session_state.model,
-                    messages=messages,
-                )
-            reply = response["choices"][0]["message"]["content"]
+                response = client.chat.completions.create(model=st.session_state.model,
+                messages=messages)
+            reply = response.choices[0].message.content
             assistant_message = {"role": "assistant", "content": reply}
             st.session_state.messages.append(assistant_message)
             # Save assistant message to the database
