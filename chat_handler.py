@@ -167,6 +167,9 @@ def handle_user_input():
             # Create a placeholder
             assistant_placeholder = st.empty()
 
+            # Invisible element to act as padding 
+            st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
+
             # Initialize an empty reply
             full_reply = ""
 
