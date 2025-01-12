@@ -37,6 +37,9 @@ if st.session_state.active_chat_id:
 else:
     st.session_state.messages = []
 
+# Invisible element to act as padding 
+st.markdown("<div style='height: 300px;'></div>", unsafe_allow_html=True)
+
 # File uploader for PDFs, .py files, and images
 uploaded_files = st.file_uploader(
     "Upload files",
@@ -49,16 +52,6 @@ uploaded_files = st.file_uploader(
 if uploaded_files and st.session_state.active_chat_id:
     handle_file_upload(uploaded_files, st.session_state.active_chat_id)
 
-# Display chat history
-display_chat_history()
-
-# Message input and send button
-input_height = 225 if len(st.session_state.messages) == 0 else 100
-st.text_area(
-    "Type your message here:",
-    key="input_box",
-    height=input_height,
-)
 
 st.selectbox(
     "Choose a model:",
@@ -66,8 +59,15 @@ st.selectbox(
     key="model",
 )
 
-st.button("Send", on_click=handle_user_input, disabled=not st.session_state.active_chat_id)
-
 # Invisible element to act as padding 
 st.markdown("<div style='height: 200px;'></div>", unsafe_allow_html=True)
 
+
+# Display chat history
+display_chat_history()
+
+# Handle user input 
+user_input = st.chat_input("Type your message here...")
+if user_input:
+    st.session_state.input_box = user_input
+    handle_user_input()

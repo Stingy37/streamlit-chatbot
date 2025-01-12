@@ -7,6 +7,10 @@ import logging
 import json
 from database import load_chat_messages, save_message, load_document_text
 
+# Paths to avatar images
+user_avatar_image = 'assets/user_icon_small.jpg'
+assistant_avatar_image = 'assets/assistant_icon_small.jpg'
+
 def initialize_session_state():
     if "model" not in st.session_state:
         st.session_state.model = "gpt-4-turbo"  # Default model
@@ -111,20 +115,28 @@ def sidebar_chat_sessions():
 
 def handle_user_input():
     user_input = st.session_state.input_box
+
     if user_input.strip() and st.session_state.active_chat_id:
         chat_id = st.session_state.active_chat_id
+
         # Add user message to session state
         user_message = {"role": "user", "content": user_input.strip()}
+        with st.chat_message(user_message["role"], avatar=user_avatar_image):
+            st.text(user_message["content"])
         st.session_state.messages.append(user_message)
+
         # Save user message to the database
         save_message(chat_id, user_message["role"], user_message["content"])
+
         # Prepare messages for the API call
         messages = []
+
         # Get the document_text specific to the current chat_id
         document_text = st.session_state.document_text.get(chat_id, "")
         for message in st.session_state.messages:
             role = message["role"]
             content = message["content"]
+
             if role == "user":
                 if document_text:
                     user_input_with_context = (
@@ -135,6 +147,7 @@ def handle_user_input():
                         f"1. If your answer contains mathematical or chemistry terms, you must enclose ANY AND ALL expressions within $$ for proper rendering. For example, $$ MATH_TERM $$.\n"
                         f"1a. Also, anything with subscripts or superscripts must be enclosed similarly within $$ __ $$, like $$ Z_{{eff}} $$ for ENC.\n\n"
                     )
+
                 else:
                     user_input_with_context = (
                         f"Here's my question: {content}\n\n"
@@ -143,35 +156,62 @@ def handle_user_input():
                         f"1a. Also, anything with subscripts or superscripts must be enclosed similarly within $$ __ $$, like $$ Z_{{eff}} $$ for ENC.\n\n"
                     )
                 messages.append({"role": role, "content": user_input_with_context})
+
             else:
                 messages.append(message)
+
         # Log the messages being sent to the API
         logging.info(f"Sending messages to OpenAI API:\n{json.dumps(messages, indent=2)}")
-        try:
-            # Generate GPT response
-            with st.spinner("Assistant is typing..."):
-                response = client.chat.completions.create(model=st.session_state.model,
-                messages=messages)
-            reply = response.choices[0].message.content
-            assistant_message = {"role": "assistant", "content": reply}
-            st.session_state.messages.append(assistant_message)
-            # Save assistant message to the database
-            save_message(chat_id, assistant_message["role"], assistant_message["content"])
-        except Exception as e:
-            # Handle exception
-            error_message = {"role": "assistant", "content": f"Error: {e}"}
-            st.session_state.messages.append(error_message)
-            # Save error message to the database
-            save_message(chat_id, error_message["role"], error_message["content"])
+
+        with st.chat_message("assistant", avatar=assistant_avatar_image):
+            # Create a placeholder
+            assistant_placeholder = st.empty()
+
+            # Initialize an empty reply
+            full_reply = ""
+
+            try:
+                # Generate GPT response with streaming
+                response = client.chat.completions.create(
+                    model=st.session_state.model,
+                    messages=messages,
+                    stream=True
+                )
+
+                for chunk in response:
+                    delta = getattr(chunk.choices[0].delta, 'content', '')
+                    if delta:
+                        full_reply += delta
+                        assistant_placeholder.markdown(full_reply)
+
+                assistant_message = {"role": "assistant", "content": full_reply}
+                st.session_state.messages.append(assistant_message)
+
+                # Save assistant message to the database
+                save_message(chat_id, assistant_message["role"], assistant_message["content"])
+
+            except Exception as e:
+                # Handle exception
+                error_message = {"role": "assistant", "content": f"Error: {e}"}
+                st.session_state.messages.append(error_message)
+            
+                # Save error message to the database
+                save_message(chat_id, error_message["role"], error_message["content"])
+
         # Clear input box
         st.session_state.input_box = ""
+
     else:
         st.error("Please select or create a chat session.")
 
+# Used to display previous chat messages (NOT displaying current interaction, which is handled in handle_user_input)
 def display_chat_history():
     for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            if message["role"] == "user":
+        if message["role"] == "user":
+            avatar_image = user_avatar_image
+            with st.chat_message(message["role"], avatar=avatar_image):
                 st.text(message["content"])
-            else:
+        else:
+            avatar_image = assistant_avatar_image
+            with st.chat_message(message["role"], avatar=avatar_image):
                 st.markdown(message["content"])
