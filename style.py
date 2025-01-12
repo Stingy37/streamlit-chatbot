@@ -39,6 +39,11 @@ def set_custom_background(background_image_path):
         pointer-events: none;
         backdrop-filter: blur(10px);
     }}
+    /* Make user input container's background transparent */
+    .stBottom > div {{
+    position: absolute !important;
+    background-color: transparent !important;
+    }}
     </style>
     '''
 

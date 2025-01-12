@@ -71,3 +71,7 @@ user_input = st.chat_input("Type your message here...")
 if user_input:
     st.session_state.input_box = user_input
     handle_user_input()
+
+
+# Invisible element to act as padding 
+st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
