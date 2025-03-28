@@ -55,7 +55,7 @@ if uploaded_files and st.session_state.active_chat_id:
 
 st.selectbox(
     "Choose a model:",
-    options=["o1-preview", "gpt-4-turbo", "o1-mini"],
+    options=["o1", "gpt-4-turbo", "o1-mini", "gpt-4.5-preview"],
     key="model",
 )
 
