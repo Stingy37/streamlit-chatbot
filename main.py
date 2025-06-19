@@ -52,7 +52,7 @@ uploaded_files = st.file_uploader(
 if uploaded_files and st.session_state.active_chat_id:
     handle_file_upload(uploaded_files, st.session_state.active_chat_id)
 
-# ——— HERE WE INCLUDE THE NEW “o4‑mini‑high” OPTION ———
+# Models for user to choose from 
 st.selectbox(
     "Choose a model:",
     options=["gpt-4o", "gpt-4.5-preview", "o4-mini", "o4-mini-high"],
