@@ -6,6 +6,8 @@ client = OpenAI()
 import logging
 import json
 from database import load_chat_messages, save_message, load_document_text
+from rag_handler import add_rag_entry
+
 
 # Paths to avatar images
 user_avatar_image = 'assets/user_icon_small.jpg'
@@ -104,10 +106,17 @@ def handle_user_input():
     if user_input.strip() and st.session_state.active_chat_id:
         chat_id = st.session_state.active_chat_id
         user_message = {"role": "user", "content": user_input.strip()}
-        with st.chat_message(user_message["role"], avatar=user_avatar_image):
+
+        # render in main chat
+        with st.chat_message("user", avatar=user_avatar_image):
             st.text(user_message["content"])
+
+        # save to session & DB
         st.session_state.messages.append(user_message)
-        save_message(chat_id, user_message["role"], user_message["content"])
+        save_message(chat_id, "user", user_message["content"])
+
+        # **RAG** — index this user turn
+        add_rag_entry(chat_id, user_message["content"])
 
         # Single system‐role message with formatting instructions 
         system_instructions = (
@@ -142,7 +151,7 @@ def handle_user_input():
 
         with st.chat_message("assistant", avatar=assistant_avatar_image):
             assistant_placeholder = st.empty()
-            st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
+            # st.markdown("<div style='height: 100px;'></div>", unsafe_allow_html=True)
             full_reply = ""
 
         # Build the parameters to send to the api
@@ -170,9 +179,13 @@ def handle_user_input():
                     full_reply += delta
                     assistant_placeholder.markdown(full_reply)
 
-            assistant_message = {"role": "assistant", "content": full_reply}
+            # after streaming is done:
+            assistant_message = {"role":"assistant","content":full_reply}
             st.session_state.messages.append(assistant_message)
-            save_message(chat_id, assistant_message["role"], assistant_message["content"])
+            save_message(chat_id, "assistant", assistant_message["content"])
+
+            # **RAG** — index the assistant turn
+            add_rag_entry(chat_id, assistant_message["content"])
 
         except Exception as e:
             error_message = {"role": "assistant", "content": f"Error: {e}"}
