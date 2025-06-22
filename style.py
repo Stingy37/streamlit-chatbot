@@ -90,12 +90,12 @@ def set_custom_css(background_image_path):
       }}
 
       html {{
-        font-size: 90%;
+        font-size: 85%;
       }}
 
       
     /* helper-panel styling: same as .block-container, applied to the float wrapper */
-    div[id^="float-this-component"][style*="width: 350px"] {{
+    div[id^="float-this-component"][style*="width: 315px"] {{
     position: relative;
     z-index: 1;
     background-color: rgba(14,17,23,0.5);
@@ -111,7 +111,7 @@ def set_custom_css(background_image_path):
     }}
 
     /* Stronger, tighter fade around the edges */
-    div[id^="float-this-component"][style*="width: 350px"]::after {{
+    div[id^="float-this-component"][style*="width: 315px"]::after {{
     content: "";
     position: fixed;
     pointer-events: none;
@@ -136,7 +136,7 @@ def set_custom_css(background_image_path):
     /* Match helper panel position — hardcoded if needed */
     top: 12vh;
     right: 0px;
-    width: 350px;
+    width: 315px;
     height: calc(100vh - 24vh);  /* same as bottom: 12vh */
 
     /* Clip to rounded panel shape */
@@ -144,7 +144,7 @@ def set_custom_css(background_image_path):
     }}
 
     /* Frosted-glass blur behind the panel */
-    div[id^="float-this-component"][style*="width: 350px"]::before {{
+    div[id^="float-this-component"][style*="width: 315px"]::before {{
     content: "";
     position: fixed;
     pointer-events: none;
@@ -153,7 +153,7 @@ def set_custom_css(background_image_path):
     /* Match helper panel position — hardcoded if needed */
     top: 12vh;
     right: 0px;
-    width: 350px;
+    width: 315px;
     height: calc(100vh - 24vh);  /* same as bottom: 12vh */
 
     /* Clip to rounded panel shape */

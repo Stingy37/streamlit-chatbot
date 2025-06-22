@@ -43,8 +43,8 @@ def set_custom_js():
 
         // 2) center the helper‐chat input in its floating panel
         function centerHelperInput() {{
-        // select the 350px‐wide float panel (your helper panel)
-        const panel = document.querySelector('div[id^="float-this-component"][style*="width: 350px"]');
+        // select the 315px‐wide float panel (your helper panel)
+        const panel = document.querySelector('div[id^="float-this-component"][style*="width: 315px"]');
         if (!panel) return;
 
         // inside that panel, grab its .stChatFloatingInputContainer

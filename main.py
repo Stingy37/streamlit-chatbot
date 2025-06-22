@@ -56,7 +56,7 @@ if st.session_state.helper_visible:
         """
         <style>
           .block-container {
-            max-width: 675px;
+            max-width: 640px;
             margin-right: 165px !important;
           }
         </style>
@@ -68,7 +68,7 @@ else:
         """
         <style>
           .block-container {
-            max-width: 675px;
+            max-width: 640px;
             margin: auto;
           }
         </style>
@@ -119,7 +119,7 @@ toggle_pos = float_css_helper(
     border_radius="0.5rem",
     z_index="1",
     **(
-        {"right": "349px"}
+        {"right": "314px"}
         if st.session_state.helper_visible
         else {"right": "-7px"}
     )
@@ -152,7 +152,7 @@ if st.session_state.helper_visible:
     helper_pos = float_css_helper(
         top="12vh",
         bottom="12vh",
-        width="350px",
+        width="315px",
         border_radius="0.5rem",
         z_index="9998",
         right="0px"
@@ -165,7 +165,7 @@ if st.session_state.helper_visible:
         top="auto",
         bottom="125px",
         height="auto",
-        width="349px",       # Offset by one so styling doesnt target it
+        width="314px",       # Offset by one so styling doesnt target it
         border_radius="0px",
         z_index="9999",
     )
