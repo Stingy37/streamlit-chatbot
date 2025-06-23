@@ -29,7 +29,13 @@ if 'helper_visible' not in st.session_state:
     st.session_state.helper_visible = False
 
 # CSS and JS to load 
-set_custom_css('background_art/background_3.jpg')
+set_custom_css(
+    background_image_path='background_art/background_3.jpg',
+    gif_path='background_art/sparkle_one.gif',
+    gif_count=5,
+    gif_blur='2px'
+)
+
 set_custom_js()
 
 # Initialize databases
@@ -56,8 +62,8 @@ if st.session_state.helper_visible:
         """
         <style>
           .block-container {
-            max-width: 640px;
-            margin-right: 165px !important;
+            max-width: 680px;
+            margin-right: 185px !important;
           }
         </style>
         """,
@@ -68,7 +74,7 @@ else:
         """
         <style>
           .block-container {
-            max-width: 640px;
+            max-width: 680px;
             margin: auto;
           }
         </style>

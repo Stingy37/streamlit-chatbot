@@ -1,7 +1,12 @@
 import streamlit as st
 import base64
 
-def set_custom_css(background_image_path):
+def set_custom_css(
+        background_image_path, 
+        gif_path=None,
+        gif_count=1,
+        gif_blur="10px"
+        ):
     # Helper to load & encode image
     @st.cache_data
     def get_base64_image(image_file):
@@ -9,19 +14,37 @@ def set_custom_css(background_image_path):
             data = f.read()
         return base64.b64encode(data).decode()
 
-    img_base64 = get_base64_image(background_image_path)
+    img64 = get_base64_image(background_image_path)
+    gif64 = get_base64_image(gif_path) if gif_path else None
+
 
     custom_css = f"""
     <style>
-      /* 1) Full‑app background */
-      .stApp {{
-        background: url("data:image/jpg;base64,{img_base64}") 
-                    no-repeat center center fixed;
+
+      body {{
+        background: url("data:image/jpg;base64,{img64}") no-repeat center center fixed;
         background-size: 115%;
-        background-position: 0px center;
       }}
 
-      /* 2) Main content container: darker tint + scrolling */
+      {f'''
+      body::before {{
+        content: "";
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: url("data:image/gif;base64,{gif64}") repeat;
+        background-size: calc(100% / {gif_count}) auto;
+        filter: blur({gif_blur});
+        transform: scaleY(1);
+        pointer-events: none;
+        z-index: -1;
+      }}
+      ''' if gif64 else ''}
+
+      .stApp {{
+        background-color: transparent !important;
+      }}
+
+      /* Main content container: darker tint + scrolling */
       .block-container {{
         position: relative;
         z-index: 0;                 /* <-- establish stacking context */
@@ -61,7 +84,7 @@ def set_custom_css(background_image_path):
         
       }}
         
-      /* 3) Frosted‑glass: 30px blur behind the container */
+      /* Frosted‑glass: 30px blur behind the container */
       .block-container::before {{
         content: "";
         position: absolute;
@@ -71,18 +94,18 @@ def set_custom_css(background_image_path):
         z-index: -2;                /* <-- push behind everything in .block-container */
       }}
 
-      /* 5) Transparent bottom input area */
+      /* Transparent bottom input area */
       .stBottom > div {{
         position: absolute;
         background-color: transparent;
       }}
 
-      /* 6) Disable auto‑scroll anchoring in chat */
+      /* Disable auto‑scroll anchoring in chat */
       [data-testid="stChatMessages"] {{
         overflow-anchor: none;
       }}
 
-      /* 7) Style only the helper chat button */
+      /* Style only the helper chat button */
      .element-container:nth-of-type(1) .stButton:nth-of-type(1) button {{
         height: 10em;
         background-color: rgba(14,17,23,0.6);
@@ -90,7 +113,7 @@ def set_custom_css(background_image_path):
       }}
 
       html {{
-        font-size: 85%;
+        font-size: 90%;
       }}
 
       
@@ -158,11 +181,10 @@ def set_custom_css(background_image_path):
 
     /* Clip to rounded panel shape */
     clip-path: inset(0 round 0.5rem);
-    
 
     backdrop-filter: blur(30px);
     }}
-
+    
     </style>
     """
 
