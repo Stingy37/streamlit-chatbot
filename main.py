@@ -2,7 +2,7 @@ import streamlit as st
 import helper_chat
 
 from style import set_custom_css
-from javascript import set_custom_js
+from javascript import set_dragging_resizing_js, set_styling_js
 from database import init_db, load_chat_messages
 from chat_handler import (
     sidebar_chat_sessions,
@@ -34,8 +34,8 @@ set_custom_css(
     gif_count=5,
     gif_blur='2px'
 )
-
-set_custom_js()
+set_dragging_resizing_js()
+set_styling_js()
 
 # Initialize databases
 init_db()
@@ -90,6 +90,18 @@ if st.session_state.helper_visible:
         helper_chat.display_helper(st.session_state.active_chat_id)
 
         helper_input_box = st.container()
+
+        # Immediately float the helper 
+        helper_input_pos = float_css_helper(
+            top="auto",
+            bottom="125px",
+            height="auto",
+            width="314px",
+            border_radius="0px",
+            z_index="9999",
+        )
+        helper_input_box.float(helper_input_pos)
+
         with helper_input_box:
             helper_user_input = st.chat_input(
                 "Ask about the chat",
@@ -111,16 +123,6 @@ if st.session_state.helper_visible:
         right="0px"
     )
     helper_panel.float(helper_pos)
-
-    helper_input_pos = float_css_helper(
-        top="auto",
-        bottom="125px",
-        height="auto",
-        width="314px",
-        border_radius="0px",
-        z_index="9999",
-    )
-    helper_input_box.float(helper_input_pos)
 
 
 ################################################################################## MAIN CHAT FLOATED PANEL ###########################################################################################
@@ -182,6 +184,7 @@ main_chat_pos = float_css_helper(
     margin_left="-340px",
 )
 main_chat.float(main_chat_pos)
+
 
 hidden_uploader = st.container()
 

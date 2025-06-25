@@ -2,7 +2,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-def set_custom_js():
+def set_dragging_resizing_js():
     components.html(
         """
         <script>
@@ -156,3 +156,7 @@ def set_custom_js():
         """,
         height=0,
     )
+
+
+def set_styling_js():
+  pass

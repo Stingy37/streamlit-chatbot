@@ -76,6 +76,7 @@ def set_custom_css(
         -ms-overflow-style: none;
       }}
 
+      /* Subtle inner-shadow fade at edges */
       div[id^="float-this-component"][style*="width: 725px"]::after {{
         content: "";
         position: fixed;           /* stays fixed in viewport */
@@ -121,7 +122,6 @@ def set_custom_css(
 
         backdrop-filter: blur(30px);
       }}
-
 
       /* Helper-panel styling: unchanged except no horizontal scroll */
       div[id^="float-this-component"][style*="width: 315px"] {{
@@ -262,8 +262,9 @@ def set_custom_css(
         border-width: 0 !important;
       }}
 
-      /* Kill the float-container’s top/bottom padding */
+      /* Kill the float-container’s top/bottom padding, and add a box shadow */
       div[id^="float-this-component"][style*="width: 700px"] {{
+        box-shadow: 0 10px 40px 10px rgba(14,17,23,0.9) !important;
         padding-bottom: 5px !important;
       }}
 
