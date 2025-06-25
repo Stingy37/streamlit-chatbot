@@ -7,7 +7,6 @@ def set_custom_css(
         gif_count=1,
         gif_blur="10px"
         ):
-    # Helper to load & encode image
     @st.cache_data
     def get_base64_image(image_file):
         with open(image_file, 'rb') as f:
@@ -16,7 +15,6 @@ def set_custom_css(
 
     img64 = get_base64_image(background_image_path)
     gif64 = get_base64_image(gif_path) if gif_path else None
-
 
     custom_css = f"""
     <style>
@@ -44,25 +42,45 @@ def set_custom_css(
         background-color: transparent !important;
       }}
 
-      /* Main content container: darker tint + scrolling */
-      .block-container {{
-        position: relative;
-        z-index: 0;                 /* <-- establish stacking context */
-        background-color: rgba(14,17,23,0.6);
-        padding-top: 2rem;
-        padding-bottom: 150px;
-        overflow: clip;
-        box-shadow: 0 0 110px 50px rgba(14,17,23,0.40);             /* outer shadow */
+      /* Transparent bottom input area */
+      .stBottom > div {{
+        position: absolute;
+        background-color: transparent;
       }}
 
-      .block-container::after {{
+      .element-container:nth-of-type(1) .stButton:nth-of-type(1) button {{
+        height: 10em;
+        background-color: rgba(14,17,23,0.6);
+        backdrop-filter: blur(10px);
+      }}
+
+      html {{
+        font-size: 100%;
+      }}
+
+
+      /* Floated MAIN chat panel — same as helper but wider */
+      div[id^="float-this-component"][style*="width: 725px"] {{
+        position: relative;
+        z-index: 1;
+        background-color: rgba(14,17,23,0.5);
+        padding: 1rem;
+        /* only vertical scroll, no horizontal */
+        overflow-y: auto;
+        overflow-x: hidden;
+        box-shadow: 0 0 110px 50px rgba(14,17,23,0.40);
+        border-radius: 0.5rem;
+        padding-bottom: 150px;
+
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }}
+
+      div[id^="float-this-component"][style*="width: 725px"]::after {{
         content: "";
-        position: absolute;
-        inset: 0;
+        position: fixed;           /* stays fixed in viewport */
         pointer-events: none;
         z-index: -1;
-
-        /* Stronger, tighter rectangular fade */
         background:
             linear-gradient(
             to right,
@@ -78,113 +96,188 @@ def set_custom_css(
             rgba(0,0,0,0.15) 90%,
             transparent 100%
             );
-
-        /* optional: soften with a tiny blur */
         filter: blur(4px);
-        
+
+        top: 8vh;
+        left: 51.5%;
+        width: 725px;
+        height: calc(100vh - 16vh);
+        transform: translateX(-50%);
+        clip-path: inset(0 round 0.5rem);
       }}
-        
-      /* Frosted‑glass: 30px blur behind the container */
-      .block-container::before {{
+
+      div[id^="float-this-component"][style*="width: 725px"]::before {{
         content: "";
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
+        position: fixed;          
         pointer-events: none;
+        z-index: -2;
+
+        top: 8vh;
+        left: 51.5%;
+        width: 725px;
+        height: calc(100vh - 16vh);
+        transform: translateX(-50%);
+        clip-path: inset(0 round 0.5rem);
+
         backdrop-filter: blur(30px);
-        z-index: -2;                /* <-- push behind everything in .block-container */
       }}
 
-      /* Transparent bottom input area */
-      .stBottom > div {{
-        position: absolute;
-        background-color: transparent;
+
+      /* Helper-panel styling: unchanged except no horizontal scroll */
+      div[id^="float-this-component"][style*="width: 315px"] {{
+        position: relative;
+        z-index: 1;
+        background-color: rgba(14,17,23,0.5);
+        padding: 1rem;
+        overflow-y: auto;
+        overflow-x: hidden;
+        box-shadow: 0 0 70px 40px rgba(14,17,23,0.35);
+        border-radius: 0.5rem;
+        padding-bottom: 100px;
+
+        scrollbar-width: none;
+        -ms-overflow-style: none;
       }}
 
-      /* Disable auto‑scroll anchoring in chat */
-      [data-testid="stChatMessages"] {{
-        overflow-anchor: none;
+      div[id^="float-this-component"][style*="width: 315px"]::after {{
+        content: "";
+        position: fixed;
+        pointer-events: none;
+        z-index: -1;
+        background:
+            linear-gradient(
+            to right,
+            transparent 0%,
+            rgba(0,0,0,0.15) 10%,
+            rgba(0,0,0,0.15) 90%,
+            transparent 100%
+            ),
+            linear-gradient(
+            to left,
+            transparent 0%,
+            rgba(0,0,0,0.15) 10%,
+            rgba(0,0,0,0.15) 90%,
+            transparent 100%
+            );
+        filter: blur(4px);
+
+        top: 12vh;
+        right: 0px;
+        width: 315px;
+        height: calc(100vh - 24vh);
+        clip-path: inset(0 round 0.5rem);
       }}
 
-      /* Style only the helper chat button */
-     .element-container:nth-of-type(1) .stButton:nth-of-type(1) button {{
-        height: 10em;
-        background-color: rgba(14,17,23,0.6);
-        backdrop-filter: blur(10px);
+      div[id^="float-this-component"][style*="width: 315px"]::before {{
+        content: "";
+        position: fixed;
+        pointer-events: none;
+        z-index: -2;
+
+        top: 12vh;
+        right: 0px;
+        width: 315px;
+        height: calc(100vh - 24vh);
+        clip-path: inset(0 round 0.5rem);
+
+        backdrop-filter: blur(30px);
       }}
 
-      html {{
-        font-size: 90%;
+      /* Step 1: clean up the wrapper div (class auto-assigned to st.chat_input) */
+      div[id^="float-this-component"][style*="width: 700px"] .stChatInput {{
+        background-color: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
       }}
 
-      
-    /* helper-panel styling: same as .block-container, applied to the float wrapper */
-    div[id^="float-this-component"][style*="width: 315px"] {{
-    position: relative;
-    z-index: 1;
-    background-color: rgba(14,17,23,0.5);
-    padding: 1rem;
-    overflow: auto;
-    box-shadow: 0 0 70px 40px rgba(14,17,23,0.35);
-    border-radius: 0.5rem;
-    padding-bottom: 100px;
+      /* Step 2: clear out the internal text input container (usually a child of stChatInput) */
+      div[id^="float-this-component"][style*="width: 700px"] .stChatInput > div {{
+        background-color: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+      }}
 
-    scrollbar-width: none;          /* Firefox */
-    -ms-overflow-style: none;       /* Internet Explorer 10+ */
+        /* Make the chat_input inside our 700px chat input container full-width & transparent */
+      div[id^="float-this-component"][style*="width: 700px"] .stChatInput textarea {{
+        width: 100% !important;
+        background-color: transparent !important;
+        border: none !important;
+        padding: 0 0.5rem 0 0 !important;  
+        margin: 0 !important;
+      }}
 
-    }}
+      /* Kill all borders attached to .stChatInput */
+      div[id^="float-this-component"][style*="width: 700px"] .stChatInput * {{
+        border: none !important;
+        border-width: 0px !important;
+        border-style: none !important;
+        border-color: transparent !important;
+        outline: none !important;
+        box-shadow: none !important;
+      }}
 
-    /* Stronger, tighter fade around the edges */
-    div[id^="float-this-component"][style*="width: 315px"]::after {{
-    content: "";
-    position: fixed;
-    pointer-events: none;
-    z-index: -1;
-    background:
-        linear-gradient(
-        to right,
-        transparent 0%,
-        rgba(0,0,0,0.15) 10%,
-        rgba(0,0,0,0.15) 90%,
-        transparent 100%
-        ),
-        linear-gradient(
-        to left,
-        transparent 0%,
-        rgba(0,0,0,0.15) 10%,
-        rgba(0,0,0,0.15) 90%,
-        transparent 100%
-        );
-    filter: blur(4px);
+      /* Minimalist file upload "+" button */
+      .file-upload-button {{
+        position: relative;
+        width: 2rem;
+        height: 2rem;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: white;
+        border-radius: 0.25rem;
+        text-align: center;
+        line-height: 2rem !important;
+        cursor: pointer;
+        z-index: 1;
+      }}
 
-    /* Match helper panel position — hardcoded if needed */
-    top: 12vh;
-    right: 0px;
-    width: 315px;
-    height: calc(100vh - 24vh);  /* same as bottom: 12vh */
+      .file-upload-button:hover {{
+        background-color: rgba(255,255,255,0.2);
+      }}
 
-    /* Clip to rounded panel shape */
-    clip-path: inset(0 round 0.5rem);
-    }}
+      div[id^="float-this-component"][style*="width: 700px"] div[data-testid="stSelectbox"] {{
+        width: 130px !important;
+        max-width: 100% !important;
+      }}
 
-    /* Frosted-glass blur behind the panel */
-    div[id^="float-this-component"][style*="width: 315px"]::before {{
-    content: "";
-    position: fixed;
-    pointer-events: none;
-    z-index: -2;
+      div[id^="float-this-component"][style*="width: 700px"] div[data-testid="stSelectbox"]:hover > div {{
+        background-color: rgba(255, 255, 255, 0.2) !important;
+        border-radius: 0.25rem;
+        cursor: pointer;
+      }}
 
-    /* Match helper panel position — hardcoded if needed */
-    top: 12vh;
-    right: 0px;
-    width: 315px;
-    height: calc(100vh - 24vh);  /* same as bottom: 12vh */
+      /* Hide the ▼ arrow icon inside the selectbox */
+      div[id^="float-this-component"][style*="width: 700px"] div[data-testid="stSelectbox"] svg {{
+        display: none !important;
+      }}
 
-    /* Clip to rounded panel shape */
-    clip-path: inset(0 round 0.5rem);
+      /* Full nuke of streamlit selectbox button container (visual box) */
+      div[id^="float-this-component"][style*="width: 700px"] div[data-testid="stSelectbox"] div {{
+        background-color: transparent !important;
+        border: none !important;
+        border-width: 0 !important;
+      }}
 
-    backdrop-filter: blur(30px);
-    }}
-    
+      /* Kill the float-container’s top/bottom padding */
+      div[id^="float-this-component"][style*="width: 700px"] {{
+        padding-bottom: 5px !important;
+      }}
+
+      div[id^="float-this-component"][style*="width: 700px"]div[data-testid="stColumns"] > div:first-child {{
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;  /* Optional: centers it horizontally too */
+      }}
+
+      div[id^="float-this-component"][style*="width: 700px"] {{
+        gap: 0 !important;
+      }}
+
+
     </style>
     """
 
@@ -197,4 +290,3 @@ def set_custom_css(
     </style>
     """
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
