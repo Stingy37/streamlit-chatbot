@@ -91,7 +91,9 @@ def helper_fragment(active_chat_id: int):
     toggle.float(toggle_pos)
 
     if st.session_state.helper_visible:
-        helper_panel = st.container()
+        helper_panel_slot = st.empty()
+        helper_panel = helper_panel_slot.container()
+
         with helper_panel:
             helper_chat.display_helper(st.session_state.active_chat_id)
 
@@ -137,10 +139,11 @@ helper_fragment(st.session_state.active_chat_id)
 ################################################################################## MAIN CHAT FLOATED PANEL ###########################################################################################
 
 
-main_chat = st.container(key="main_chat_panel")
+main_chat_slot = st.empty() # We must wrap in st.empty to avoid rerun styling "flashes"
+main_chat = main_chat_slot.container(key="main_chat_panel")
 
 with main_chat:
-    # Avoid rerun styling glitches
+    # Avoid rerun styling flash
     _input_slot = st.empty()
 
     st.markdown("<div style='height:3rem;'></div>", unsafe_allow_html=True)
@@ -150,7 +153,7 @@ with main_chat:
         greetings = [
             "What's on the agenda today?",
             "Hello there! Ready to chat?",
-            "How can I help you this fine day?",
+            "How can I help you?",
             "Got questions? I'm all ears.",
             "Hey! What's up?"
         ]
