@@ -11,16 +11,29 @@ def set_dragging_resizing_js():
           const parentScript = window.parent.document.createElement('script');
           parentScript.type = 'text/javascript';
           parentScript.text = `
-            // —— Re-center main chat input under .block-container ——
+            // Re-center main chat input under .block-container ——
             function centerChat() {
-              const bc   = document.querySelector('.block-container');
-              const chat = document.querySelector('.stChatFloatingInputContainer');
-              if (!bc || !chat) return;
-              const bcRect   = bc.getBoundingClientRect();
-              const chatRect = chat.getBoundingClientRect();
-              const x = bcRect.left + (bcRect.width - chatRect.width) / 2;
-              chat.style.left = x + 'px';
+              // 1) Get your top-level floated panel by key
+              const panel = document.querySelector('[data-st-key="main_chat_panel"]');
+              if (!panel) return;
+
+              // 2) Find the nested input wrapper div that float-css-helper created
+              const inputWrap = panel.querySelector('div[id^="float-this-component-"]');
+              if (!inputWrap) return;
+
+              // 3) Measure them
+              const pR = panel.getBoundingClientRect();
+              const iR = inputWrap.getBoundingClientRect();
+
+              // 4) Compute center X
+              const x = pR.left + (pR.width - iR.width) / 2;
+
+              // 5) Override any existing left/transform with !important
+              inputWrap.style.setProperty('left', x + 'px', 'important');
+              inputWrap.style.removeProperty('transform');
             }
+
+
 
             // —— Keep helper input centered ——
             function centerHelperInput() {
@@ -159,4 +172,5 @@ def set_dragging_resizing_js():
 
 
 def set_styling_js():
-  pass
+    pass
+

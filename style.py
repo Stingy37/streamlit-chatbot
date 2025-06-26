@@ -68,7 +68,7 @@ def set_custom_css(
         /* only vertical scroll, no horizontal */
         overflow-y: auto;
         overflow-x: hidden;
-        box-shadow: 0 0 110px 50px rgba(14,17,23,0.40);
+        box-shadow: 0 0 40px 20px rgba(14,17,23,0.6);
         border-radius: 0.5rem;
         padding-bottom: 150px;
 
@@ -131,7 +131,7 @@ def set_custom_css(
         padding: 1rem;
         overflow-y: auto;
         overflow-x: hidden;
-        box-shadow: 0 0 70px 40px rgba(14,17,23,0.35);
+        box-shadow: 0 0 40px 20px rgba(14,17,23,0.6);
         border-radius: 0.5rem;
         padding-bottom: 100px;
 
@@ -183,7 +183,7 @@ def set_custom_css(
         backdrop-filter: blur(30px);
       }}
 
-      /* Step 1: clean up the wrapper div (class auto-assigned to st.chat_input) */
+      /* Clean up the wrapper div (class auto-assigned to st.chat_input) */
       div[id^="float-this-component"][style*="width: 700px"] .stChatInput {{
         background-color: transparent !important;
         padding: 0 !important;
@@ -192,7 +192,17 @@ def set_custom_css(
         box-shadow: none !important;
       }}
 
-      /* Step 2: clear out the internal text input container (usually a child of stChatInput) */
+      /* Target the entire chat input so that the submit button's position can be controlled as well */
+      div[id^="float-this-component"][style*="width: 700px"]
+        .stElementContainer > div > div {{
+        display: flex !important;
+        max-width: 685px !important;   /* ← overall widget width, which is parent width (700) - 15 */
+        width: 100% !important;         /* fill its 700px parent */
+        gap: 0.25rem !important;        /* space between textarea & button */
+      }}
+
+
+      /* Clear out the internal text input container (usually a child of stChatInput) */
       div[id^="float-this-component"][style*="width: 700px"] .stChatInput > div {{
         background-color: transparent !important;
         padding: 0 !important;
@@ -203,10 +213,9 @@ def set_custom_css(
 
         /* Make the chat_input inside our 700px chat input container full-width & transparent */
       div[id^="float-this-component"][style*="width: 700px"] .stChatInput textarea {{
-        width: 100% !important;
+        width: 98% !important;
         background-color: transparent !important;
         border: none !important;
-        padding: 0 0.5rem 0 0 !important;  
         margin: 0 !important;
       }}
 

@@ -127,16 +127,20 @@ if st.session_state.helper_visible:
 
 ################################################################################## MAIN CHAT FLOATED PANEL ###########################################################################################
 
-main_chat = st.container()
+
+main_chat = st.container(key="main_chat_panel")
 
 with main_chat:
-    st.markdown("<div style='height:3rem;'></div>", unsafe_allow_html=True)
+    # Avoid rerun styling glitches
+    _input_slot = st.empty()
 
+    st.markdown("<div style='height:3rem;'></div>", unsafe_allow_html=True)
     display_chat_history()
 
-    main_input_container = st.container()
+    # Create the container object via the empty slot
+    main_input_container = _input_slot.container()
 
-    # Float immediately 
+    # Float it immediately
     main_input_pos = float_css_helper(
         top="auto",
         bottom="90px",
@@ -149,27 +153,25 @@ with main_chat:
     )
     main_input_container.float(main_input_pos)
 
+    # Render inside 
     with main_input_container:
-        # Chat input
         main_user_input = st.chat_input(
             "Ask anything",
             key=f"main_input_{st.session_state.active_chat_id}"
         )
 
-        # Below that: a tiny two-column row
         col_u, col_m = st.columns([0.12, 0.88], gap="small")
         with col_u:
             st.markdown('<div class="file-upload-button">+</div>', unsafe_allow_html=True)
-
         with col_m:
             st.selectbox(
-                label="placeholder",  # hide default Streamlit label
+                label="placeholder",
                 options=["gpt-4o", "gpt-4.5-preview", "o4-mini", "o4-mini-high"],
                 key="model",
                 label_visibility="collapsed"
             )
 
-
+    # Handle submit 
     if main_user_input:
         st.session_state.input_box = main_user_input
         handle_user_input()
@@ -184,6 +186,7 @@ main_chat_pos = float_css_helper(
     margin_left="-340px",
 )
 main_chat.float(main_chat_pos)
+
 
 hidden_uploader = st.container()
 
