@@ -274,9 +274,31 @@ def set_custom_css(
         justify-content: center !important;  /* Optional: centers it horizontally too */
       }}
 
+      /* Get rid of extra gaps for the chat input */
       div[id^="float-this-component"][style*="width: 700px"] {{
         gap: 0 !important;
       }}
+
+            /* Make every chat-message a flex container */
+      div[id^="float-this-component"][style*="width: 725px"]
+        div[data-testid="stChatMessage"] {{
+        display: flex !important;
+        align-items: flex-start;
+      }}
+
+      /* Detect “user” messages by checking for the user’s avatar ALT text, then reverse the ordering of avatar ↔ text */
+      div[id^="float-this-component"][style*="width: 725px"] div[data-testid="stChatMessage"]:has(img[alt="user avatar"]) {{
+          flex-direction: row-reverse !important;
+
+      }}
+
+      div[id^="float-this-component"][style*="width: 725px"]
+        div[data-testid="stChatMessage"]:has(img[alt="user avatar"])
+        [data-testid="stText"] {{
+        text-align: right !important;
+        justify-content: flex-end !important;
+      }}
+
 
 
     </style>

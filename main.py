@@ -185,7 +185,6 @@ main_chat_pos = float_css_helper(
 )
 main_chat.float(main_chat_pos)
 
-
 hidden_uploader = st.container()
 
 with hidden_uploader:
