@@ -173,4 +173,3 @@ def set_dragging_resizing_js():
 
 def set_styling_js():
     pass
-

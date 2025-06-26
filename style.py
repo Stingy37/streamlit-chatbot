@@ -301,6 +301,7 @@ def set_custom_css(
 
       }}
 
+      /* Move user text messages to the right side of the main chat */
       div[id^="float-this-component"][style*="width: 725px"]
         div[data-testid="stChatMessage"]:has(img[alt="user avatar"])
         [data-testid="stText"] {{
@@ -308,6 +309,16 @@ def set_custom_css(
         justify-content: flex-end !important;
       }}
 
+
+      /* Style initial greeting message */
+      #greeting {{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+        color: rgba(255,255,255,0.7);
+        font-size: 1.7rem;
+      }}
 
 
     </style>

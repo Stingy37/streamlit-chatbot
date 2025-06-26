@@ -1,5 +1,8 @@
 import streamlit as st
+import random
 import helper_chat
+import streamlit.components.v1 as components
+
 
 from style import set_custom_css
 from javascript import set_dragging_resizing_js, set_styling_js
@@ -57,72 +60,78 @@ else:
 
 ################################################################################## HELPER CHAT LAYOUT ###########################################################################################
 
-# Toggle button
-def _toggle_helper():
-    st.session_state.helper_visible = not st.session_state.helper_visible
+ # Wrap the helper-chat UI into a fragment so it reruns independently (do NOT write into fragment containers from outside—keep things independent)
+@st.fragment
+def helper_fragment(active_chat_id: int):
+    # Toggle button
+    def _toggle_helper():
+        st.session_state.helper_visible = not st.session_state.helper_visible
 
-toggle = st.container()
-with toggle:
-    label = "◂" if not st.session_state.helper_visible else "▸"
-    st.button(
-        label,
-        key="toggle_helper",
-        on_click=_toggle_helper,
-    )
-
-toggle_pos = float_css_helper(
-    top="40vh",
-    height="8rem",
-    width="2rem",
-    border_radius="0.5rem",
-    z_index="1",
-    **(
-        {"right": "314px"}
-        if st.session_state.helper_visible
-        else {"right": "-7px"}
-    )
-)
-toggle.float(toggle_pos)
-
-if st.session_state.helper_visible:
-    helper_panel = st.container()
-    with helper_panel:
-        helper_chat.display_helper(st.session_state.active_chat_id)
-
-        helper_input_box = st.container()
-
-        # Immediately float the helper 
-        helper_input_pos = float_css_helper(
-            top="auto",
-            bottom="125px",
-            height="auto",
-            width="314px",
-            border_radius="0px",
-            z_index="9999",
+    toggle = st.container()
+    with toggle:
+        label = "◂" if not st.session_state.helper_visible else "▸"
+        st.button(
+            label,
+            key="toggle_helper",
+            on_click=_toggle_helper,
         )
-        helper_input_box.float(helper_input_pos)
 
-        with helper_input_box:
-            helper_user_input = st.chat_input(
-                "Ask about the chat",
-                key=f"helper_input_{st.session_state.active_chat_id}"
-            )
-
-        if helper_user_input:
-            helper_chat._handle_helper_input(
-                st.session_state.active_chat_id,
-                helper_user_input
-            )
-
-    helper_pos = float_css_helper(
-        top="12vh",
-        bottom="12vh",
-        width="315px",
+    toggle_pos = float_css_helper(
+        top="40vh",
+        height="8rem",
+        width="2rem",
         border_radius="0.5rem",
-        z_index="9998",
-        right="0px"
+        z_index="1",
+        **(
+            {"right": "314px"}
+            if st.session_state.helper_visible
+            else {"right": "-7px"}
+        )
     )
-    helper_panel.float(helper_pos)
+    toggle.float(toggle_pos)
+
+    if st.session_state.helper_visible:
+        helper_panel = st.container()
+        with helper_panel:
+            helper_chat.display_helper(st.session_state.active_chat_id)
+
+            helper_input_box = st.container()
+
+            # Immediately float the helper 
+            helper_input_pos = float_css_helper(
+                top="auto",
+                bottom="125px",
+                height="auto",
+                width="314px",
+                border_radius="0px",
+                z_index="9999",
+            )
+            helper_input_box.float(helper_input_pos)
+
+            with helper_input_box:
+                helper_user_input = st.chat_input(
+                    "Ask about the chat",
+                    key=f"helper_input_{st.session_state.active_chat_id}"
+                )
+
+            if helper_user_input:
+                helper_chat._handle_helper_input(
+                    st.session_state.active_chat_id,
+                    helper_user_input
+                )
+
+        helper_pos = float_css_helper(
+            top="12vh",
+            bottom="12vh",
+            width="315px",
+            border_radius="0.5rem",
+            z_index="9998",
+            right="0px"
+        )
+        helper_panel.float(helper_pos)
+
+# Call the fragment
+helper_fragment(st.session_state.active_chat_id)
 
 
 ################################################################################## MAIN CHAT FLOATED PANEL ###########################################################################################
@@ -135,6 +144,26 @@ with main_chat:
     _input_slot = st.empty()
 
     st.markdown("<div style='height:3rem;'></div>", unsafe_allow_html=True)
+
+    # Add a initial randomized greeting message 
+    if not st.session_state.messages:
+        greetings = [
+            "What's on the agenda today?",
+            "Hello there! Ready to chat?",
+            "How can I help you this fine day?",
+            "Got questions? I'm all ears.",
+            "Hey! What's up?"
+        ]
+        greeting = random.choice(greetings)
+
+        greeting_slot = st.empty()
+        with greeting_slot:
+            st.markdown(
+                f'<div id="greeting">{greeting}</div>', # Use the ID here to target it in CSS
+                unsafe_allow_html=True
+            )
+
+
     display_chat_history()
 
     # Create the container object via the empty slot
@@ -153,7 +182,7 @@ with main_chat:
     )
     main_input_container.float(main_input_pos)
 
-    # Render inside 
+    # Render actual chat input inside 
     with main_input_container:
         main_user_input = st.chat_input(
             "Ask anything",
@@ -171,8 +200,12 @@ with main_chat:
                 label_visibility="collapsed"
             )
 
-    # Handle submit 
+    # Handle input submission 
     if main_user_input:
+        # First, check to see if greeting div exists, if so, remove it 
+        if "greeting_slot" in locals():
+            greeting_slot.empty()
+
         st.session_state.input_box = main_user_input
         handle_user_input()
 
