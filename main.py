@@ -123,8 +123,8 @@ def helper_fragment(active_chat_id: int):
                 )
 
         helper_pos = float_css_helper(
-            top="12vh",
-            bottom="12vh",
+            top="8vh",
+            bottom="8vh",
             width="315px",
             border_radius="0.5rem",
             z_index="9998",
@@ -177,7 +177,7 @@ with main_chat:
         top="auto",
         bottom="90px",
         height="auto",
-        width="700px",
+        width="770px",
         border_radius="0.5rem",
         background_color="rgba(37,38,50, 1.0)",
         padding="0.5rem",
@@ -215,11 +215,10 @@ with main_chat:
 main_chat_pos = float_css_helper(
     top="8vh",
     bottom="8vh",
-    width="725px",
+    width="800px",
     border_radius="0.5rem",
     z_index="9997",
-    left="50%",
-    margin_left="-340px",
+    left="23.5%",
 )
 main_chat.float(main_chat_pos)
 

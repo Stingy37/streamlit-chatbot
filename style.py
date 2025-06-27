@@ -60,8 +60,8 @@ def set_custom_css(
 
 
       /* Floated MAIN chat panel — same as helper but wider */
-      div[id^="float-this-component"][style*="width: 725px"] {{
-        position: relative;
+      div[id^="float-this-component"][style*="width: 800px"] {{
+        position: fixed;
         z-index: 1;
         background-color: rgba(14,17,23,0.5);
         padding: 1rem;
@@ -77,7 +77,7 @@ def set_custom_css(
       }}
 
       /* Subtle inner-shadow fade at edges */
-      div[id^="float-this-component"][style*="width: 725px"]::after {{
+      div[id^="float-this-component"][style*="width: 800px"]::after {{
         content: "";
         position: fixed;           /* stays fixed in viewport */
         pointer-events: none;
@@ -100,24 +100,22 @@ def set_custom_css(
         filter: blur(4px);
 
         top: 8vh;
-        left: 51.5%;
-        width: 725px;
+        left: 23.5%;
+        width: 800px;
         height: calc(100vh - 16vh);
-        transform: translateX(-50%);
         clip-path: inset(0 round 0.5rem);
       }}
 
-      div[id^="float-this-component"][style*="width: 725px"]::before {{
+      div[id^="float-this-component"][style*="width: 800px"]::before {{
         content: "";
         position: fixed;          
         pointer-events: none;
         z-index: -2;
 
         top: 8vh;
-        left: 51.5%;
-        width: 725px;
+        left: 23.5%;
+        width: 800px;
         height: calc(100vh - 16vh);
-        transform: translateX(-50%);
         clip-path: inset(0 round 0.5rem);
 
         backdrop-filter: blur(30px);
@@ -161,10 +159,10 @@ def set_custom_css(
             );
         filter: blur(4px);
 
-        top: 12vh;
+        top: 8vh;
         right: 0px;
         width: 315px;
-        height: calc(100vh - 24vh);
+        height: calc(100vh - 16vh);
         clip-path: inset(0 round 0.5rem);
       }}
 
@@ -174,17 +172,17 @@ def set_custom_css(
         pointer-events: none;
         z-index: -2;
 
-        top: 12vh;
+        top: 8vh;
         right: 0px;
         width: 315px;
-        height: calc(100vh - 24vh);
+        height: calc(100vh - 16vh);
         clip-path: inset(0 round 0.5rem);
 
         backdrop-filter: blur(30px);
       }}
 
       /* Clean up the wrapper div (class auto-assigned to st.chat_input) */
-      div[id^="float-this-component"][style*="width: 700px"] .stChatInput {{
+      div[id^="float-this-component"][style*="width: 770px"] .stChatInput {{
         background-color: transparent !important;
         padding: 0 !important;
         margin: 0 !important;
@@ -193,17 +191,17 @@ def set_custom_css(
       }}
 
       /* Target the entire chat input so that the submit button's position can be controlled as well */
-      div[id^="float-this-component"][style*="width: 700px"]
+      div[id^="float-this-component"][style*="width: 770px"]
         .stElementContainer > div > div {{
         display: flex !important;
-        max-width: 685px !important;   /* ← overall widget width, which is parent width (700) - 15 */
-        width: 100% !important;         /* fill its 700px parent */
+        max-width: 755px !important;   /* ← overall widget width, which is parent width (770) - 15 */
+        width: 100% !important;         /* fill its 770px parent */
         gap: 0.25rem !important;        /* space between textarea & button */
       }}
 
 
       /* Clear out the internal text input container (usually a child of stChatInput) */
-      div[id^="float-this-component"][style*="width: 700px"] .stChatInput > div {{
+      div[id^="float-this-component"][style*="width: 770px"] .stChatInput > div {{
         background-color: transparent !important;
         padding: 0 !important;
         margin: 0 !important;
@@ -211,8 +209,8 @@ def set_custom_css(
         box-shadow: none !important;
       }}
 
-        /* Make the chat_input inside our 700px chat input container full-width & transparent */
-      div[id^="float-this-component"][style*="width: 700px"] .stChatInput textarea {{
+        /* Make the chat_input inside our 770px chat input container full-width & transparent */
+      div[id^="float-this-component"][style*="width: 770px"] .stChatInput textarea {{
         width: 98% !important;
         background-color: transparent !important;
         border: none !important;
@@ -220,7 +218,7 @@ def set_custom_css(
       }}
 
       /* Kill all borders attached to .stChatInput */
-      div[id^="float-this-component"][style*="width: 700px"] .stChatInput * {{
+      div[id^="float-this-component"][style*="width: 770px"] .stChatInput * {{
         border: none !important;
         border-width: 0px !important;
         border-style: none !important;
@@ -248,64 +246,64 @@ def set_custom_css(
         background-color: rgba(255,255,255,0.2);
       }}
 
-      div[id^="float-this-component"][style*="width: 700px"] div[data-testid="stSelectbox"] {{
+      div[id^="float-this-component"][style*="width: 770px"] div[data-testid="stSelectbox"] {{
         width: 130px !important;
         max-width: 100% !important;
       }}
 
-      div[id^="float-this-component"][style*="width: 700px"] div[data-testid="stSelectbox"]:hover > div {{
+      div[id^="float-this-component"][style*="width: 770px"] div[data-testid="stSelectbox"]:hover > div {{
         background-color: rgba(255, 255, 255, 0.2) !important;
         border-radius: 0.25rem;
         cursor: pointer;
       }}
 
       /* Hide the ▼ arrow icon inside the selectbox */
-      div[id^="float-this-component"][style*="width: 700px"] div[data-testid="stSelectbox"] svg {{
+      div[id^="float-this-component"][style*="width: 770px"] div[data-testid="stSelectbox"] svg {{
         display: none !important;
       }}
 
       /* Full nuke of streamlit selectbox button container (visual box) */
-      div[id^="float-this-component"][style*="width: 700px"] div[data-testid="stSelectbox"] div {{
+      div[id^="float-this-component"][style*="width: 770px"] div[data-testid="stSelectbox"] div {{
         background-color: transparent !important;
         border: none !important;
         border-width: 0 !important;
       }}
 
       /* Kill the float-container’s top/bottom padding, and add a box shadow */
-      div[id^="float-this-component"][style*="width: 700px"] {{
+      div[id^="float-this-component"][style*="width: 770px"] {{
         box-shadow: 0 10px 40px 10px rgba(14,17,23,0.9) !important;
         padding-bottom: 5px !important;
       }}
 
-      div[id^="float-this-component"][style*="width: 700px"]div[data-testid="stColumns"] > div:first-child {{
+      div[id^="float-this-component"][style*="width: 770px"]div[data-testid="stColumns"] > div:first-child {{
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;  /* Optional: centers it horizontally too */
       }}
 
       /* Get rid of extra gaps for the chat input */
-      div[id^="float-this-component"][style*="width: 700px"] {{
+      div[id^="float-this-component"][style*="width: 770px"] {{
         gap: 0 !important;
       }}
 
             /* Make every chat-message a flex container */
-      div[id^="float-this-component"][style*="width: 725px"]
+      div[id^="float-this-component"][style*="width: 800px"]
         div[data-testid="stChatMessage"] {{
         display: flex !important;
         align-items: flex-start;
       }}
 
       /* Detect “user” messages by checking for the user’s avatar ALT text, then reverse the ordering of avatar ↔ text */
-      div[id^="float-this-component"][style*="width: 725px"] div[data-testid="stChatMessage"]:has(img[alt="user avatar"]) {{
+      div[id^="float-this-component"][style*="width: 800px"] div[data-testid="stChatMessage"]:has(img[alt="user avatar"]) {{
           flex-direction: row-reverse !important;
 
       }}
 
-      /* Move user text messages to the right side of the main chat */
-      div[id^="float-this-component"][style*="width: 725px"]
+      /* Move user text messages to the right side of the main chat, but still keep left alignment */
+      div[id^="float-this-component"][style*="width: 800px"]
         div[data-testid="stChatMessage"]:has(img[alt="user avatar"])
         [data-testid="stText"] {{
-        text-align: right !important;
+        text-align: left !important;
         justify-content: flex-end !important;
       }}
 

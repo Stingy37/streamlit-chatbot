@@ -11,6 +11,8 @@ def set_dragging_resizing_js():
           const parentScript = window.parent.document.createElement('script');
           parentScript.type = 'text/javascript';
           parentScript.text = `
+
+          
             // Re-center main chat input under .block-container ——
             function centerChat() {
               // 1) Get your top-level floated panel by key
@@ -34,6 +36,25 @@ def set_dragging_resizing_js():
             }
 
 
+            let mainBefore, mainAfter, helperBefore, helperAfter;
+            function cacheShadowRules() {
+              for (const sheet of document.styleSheets) {
+                try {
+                  for (const rule of sheet.cssRules) {
+                    switch (rule.selectorText) {
+                      case 'div[id^="float-this-component"][style*="width: 800px"]::before':
+                        mainBefore   = rule; break;
+                      case 'div[id^="float-this-component"][style*="width: 800px"]::after':
+                        mainAfter    = rule; break;
+                      case 'div[id^="float-this-component"][style*="width: 315px"]::before':
+                        helperBefore = rule; break;
+                      case 'div[id^="float-this-component"][style*="width: 315px"]::after':
+                        helperAfter  = rule; break;
+                    }
+                  }
+                } catch {}
+              }
+            }
 
             // —— Keep helper input centered ——
             function centerHelperInput() {
@@ -45,89 +66,184 @@ def set_dragging_resizing_js():
               helperCh.style.left = (pR.left + (pR.width - cR.width)/2) + 'px';
             }
 
-            // —— Draggable for .block-container ——
+            
+            // —— Draggable for main_chat_panel ——
             function makeMainDraggable() {
-              const el = document.querySelector('.block-container');
+              const el = document.querySelector(
+                'div[id^="float-this-component"][style*="width: 800px"]'
+              );
               if (!el) return;
+
+              // restore saved position...
               const saved = localStorage.getItem('main-container-pos');
               if (saved) {
                 try {
                   const { top, left } = JSON.parse(saved);
                   el.style.position = 'fixed';
-                  el.style.top  = top;
-                  el.style.left = left;
+                  el.style.top      = top;
+                  el.style.left     = left;
+                  // also update the shadows once on load:
+                  if (mainBefore) {
+                      mainBefore.style.top  = top;
+                      mainBefore.style.left = left;
+                  }
+                  if (mainAfter) {
+                      mainAfter.style.top   = top;
+                      mainAfter.style.left  = left;
+                  }
                 } catch {}
               }
+
               let sx, sy, ox, oy, onMove, onUp;
               el.addEventListener('dblclick', e => {
                 e.preventDefault();
                 const rect = el.getBoundingClientRect();
+
+                // pin it fixed at that spot
+                el.style.position = 'fixed';
+                el.style.left     = rect.left + 'px';
+                el.style.top      = rect.top  + 'px';
+                el.style.removeProperty('margin-left');
+                el.style.removeProperty('transform');
+
+                // record drag start
                 sx = e.clientX; sy = e.clientY;
                 ox = rect.left; oy = rect.top;
+
                 onMove = ev => {
-                  const dx = ev.clientX - sx, dy = ev.clientY - sy;
-                  el.style.position = 'fixed';
-                  el.style.left  = (ox + dx) + 'px';
-                  el.style.top   = (oy + dy) + 'px';
+                  const dx = ev.clientX - sx;
+                  const dy = ev.clientY - sy;
+                  const newLeft = ox + dx;
+                  const newTop  = oy + dy;
+
+                  // move the panel
+                  el.style.left = newLeft + 'px';
+                  el.style.top  = newTop  + 'px';
+
+                  // **also move the fixed pseudos**
+                  if (mainBefore) {
+                    mainBefore.style.top  = newTop  + 'px';
+                    mainBefore.style.left = newLeft + 'px';
+                  }
+                  if (mainAfter) {
+                    mainAfter.style.top  = newTop  + 'px';
+                    mainAfter.style.left = newLeft + 'px';
+                  }
+
                   centerChat();
                   centerHelperInput();
                 };
+
                 onUp = () => {
                   document.removeEventListener('mousemove', onMove);
                   document.removeEventListener('mouseup', onUp);
-                  localStorage.setItem('main-container-pos',
+                  localStorage.setItem(
+                    'main-container-pos',
                     JSON.stringify({ top: el.style.top, left: el.style.left })
                   );
                 };
+
                 document.addEventListener('mousemove', onMove);
                 document.addEventListener('mouseup', onUp);
               });
             }
 
-            // —— Helper panel draggable ——
+            
             function makeHelperDraggable() {
-              const el = document.querySelector('div[id^="float-this-component"][style*="width: 315px"]');
+              const el = document.querySelector(
+                'div[id^="float-this-component"][style*="width: 315px"]'
+              );
               if (!el) return;
+
+              // restore saved helper position
               const saved = localStorage.getItem('helper-panel-pos');
               if (saved) {
                 try {
                   const { top, left } = JSON.parse(saved);
                   el.style.position = 'fixed';
-                  el.style.top  = top;
-                  el.style.left = left;
+                  el.style.top      = top;
+                  el.style.left     = left;
+                  // also push the helper pseudos into place
+                  if (helperBefore) {
+                    helperBefore.style.top  = top;
+                    helperBefore.style.left = left;
+                  }
+                  if (helperAfter) {
+                    helperAfter.style.top   = top;
+                    helperAfter.style.left  = left;
+                  }
                 } catch {}
               }
+
               let sx, sy, ox, oy, onMove, onUp;
               el.addEventListener('dblclick', e => {
                 e.preventDefault();
                 const rect = el.getBoundingClientRect();
+
+                // pin it
+                el.style.position = 'fixed';
+                el.style.left     = rect.left + 'px';
+                el.style.top      = rect.top  + 'px';
+
                 sx = e.clientX; sy = e.clientY;
                 ox = rect.left; oy = rect.top;
+
                 onMove = ev => {
-                  el.style.position = 'fixed';
-                  el.style.left = (ox + ev.clientX - sx) + 'px';
-                  el.style.top  = (oy + ev.clientY - sy) + 'px';
+                  const newLeft = ox + (ev.clientX - sx);
+                  const newTop  = oy + (ev.clientY - sy);
+
+                  el.style.left = newLeft + 'px';
+                  el.style.top  = newTop  + 'px';
+
+                  // move helper pseudos
+                  if (helperBefore) {
+                    helperBefore.style.top  = newTop  + 'px';
+                    helperBefore.style.left = newLeft + 'px';
+                  }
+                  if (helperAfter) {
+                    helperAfter.style.top   = newTop  + 'px';
+                    helperAfter.style.left  = newLeft + 'px';
+                  }
                 };
                 onUp = () => {
                   document.removeEventListener('mousemove', onMove);
                   document.removeEventListener('mouseup', onUp);
-                  localStorage.setItem('helper-panel-pos',
+                  localStorage.setItem(
+                    'helper-panel-pos',
                     JSON.stringify({ top: el.style.top, left: el.style.left })
                   );
                 };
+
                 document.addEventListener('mousemove', onMove);
                 document.addEventListener('mouseup', onUp);
               });
             }
 
+            
             // —— Reset logic ——
             function resetPositions() {
               ['main-container-pos','helper-panel-pos'].forEach(k => localStorage.removeItem(k));
-              document.querySelectorAll('.block-container, div[id^="float-this-component"]').forEach(e => {
-                e.style.removeProperty('position');
-                e.style.removeProperty('top');
-                e.style.removeProperty('left');
-              });
+              // Target only two floated panels by their width markers
+              document
+                .querySelectorAll(
+                  'div[id^="float-this-component"][style*="width: 800px"], ' +
+                  'div[id^="float-this-component"][style*="width: 315px"]'
+                )
+                .forEach(e => {
+                  e.style.removeProperty('position');
+                  e.style.removeProperty('top');
+                  e.style.removeProperty('left');
+                });
+
+              // restore main pseudos to original css
+              if (mainBefore) { mainBefore.style.top = '8vh';    mainBefore.style.left = '23.5%'; }
+              if (mainAfter)  { mainAfter.style.top  = '8vh';    mainAfter.style.left  = '23.5%'; }
+
+              // restore helper pseudos to original css
+              if (helperBefore) { helperBefore.style.top = '8vh';  helperBefore.style.left = 'auto'; helperBefore.style.right = '0'; }
+              if (helperAfter)  { helperAfter.style.top  = '8vh';  helperAfter.style.left = 'auto'; helperAfter.style.right = '0'; }
+
+              // Re‐center inputs
               centerChat();
               centerHelperInput();
             }
@@ -154,6 +270,7 @@ def set_dragging_resizing_js():
 
             // —— Initialize everything ——
             function initAll() {
+              cacheShadowRules();
               makeMainDraggable();
               makeHelperDraggable();
               centerChat();
