@@ -48,8 +48,10 @@ def set_custom_css(
         background-color: transparent;
       }}
 
+      /* Toggle button */
       .element-container:nth-of-type(1) .stButton:nth-of-type(1) button {{
         height: 10em;
+        width: 2rem;
         background-color: rgba(14,17,23,0.6);
         backdrop-filter: blur(10px);
       }}

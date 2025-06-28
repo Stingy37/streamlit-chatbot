@@ -78,7 +78,6 @@ def helper_fragment(active_chat_id: int):
 
     toggle_pos = float_css_helper(
         top="40vh",
-        height="8rem",
         width="2rem",
         border_radius="0.5rem",
         z_index="1",

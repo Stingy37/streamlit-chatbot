@@ -12,29 +12,46 @@ def set_dragging_resizing_js():
           parentScript.type = 'text/javascript';
           parentScript.text = `
 
+            // —— New: capture the original defaults ——  
+            const DEFAULT_TOP  = '8vh';  
+            const DEFAULT_LEFT = '23.5%';
+
+            // —— New: helper to inject/override default CSS ——  
+            function updateDefaultCSS(top, left) {
+              let style = document.getElementById('main-pos-override');
+              if (!style) {
+                style = document.createElement('style');
+                style.id = 'main-pos-override';
+                document.head.appendChild(style);
+              }
+              style.textContent = \`
+                div[id^="float-this-component"][style*="width: 800px"] {
+                  position: fixed !important;
+                  top: \${top} !important;
+                  left: \${left} !important;
+                }
+                div[id^="float-this-component"][style*="width: 800px"]::before,
+                div[id^="float-this-component"][style*="width: 800px"]::after {
+                  position: fixed !important;
+                  top: \${top} !important;
+                  left: \${left} !important;
+                }
+              \`;
+            }
+
           
             // Re-center main chat input under .block-container ——
             function centerChat() {
-              // 1) Get your top-level floated panel by key
               const panel = document.querySelector('[data-st-key="main_chat_panel"]');
               if (!panel) return;
-
-              // 2) Find the nested input wrapper div that float-css-helper created
               const inputWrap = panel.querySelector('div[id^="float-this-component-"]');
               if (!inputWrap) return;
-
-              // 3) Measure them
               const pR = panel.getBoundingClientRect();
               const iR = inputWrap.getBoundingClientRect();
-
-              // 4) Compute center X
               const x = pR.left + (pR.width - iR.width) / 2;
-
-              // 5) Override any existing left/transform with !important
               inputWrap.style.setProperty('left', x + 'px', 'important');
               inputWrap.style.removeProperty('transform');
             }
-
 
             let mainBefore, mainAfter, helperBefore, helperAfter;
             function cacheShadowRules() {
@@ -74,15 +91,17 @@ def set_dragging_resizing_js():
               );
               if (!el) return;
 
-              // restore saved position...
+              // restore saved position and override defaults...
               const saved = localStorage.getItem('main-container-pos');
               if (saved) {
                 try {
                   const { top, left } = JSON.parse(saved);
+                  // apply via CSS override
+                  updateDefaultCSS(top, left);
+                  // also position any existing element immediately
                   el.style.position = 'fixed';
                   el.style.top      = top;
                   el.style.left     = left;
-                  // also update the shadows once on load:
                   if (mainBefore) {
                       mainBefore.style.top  = top;
                       mainBefore.style.left = left;
@@ -98,6 +117,10 @@ def set_dragging_resizing_js():
               el.addEventListener('dblclick', e => {
                 e.preventDefault();
                 const rect = el.getBoundingClientRect();
+
+                // Remove the position pinning if the user if dragging again
+                const override = document.getElementById('main-pos-override');
+                if (override) override.remove();
 
                 // pin it fixed at that spot
                 el.style.position = 'fixed';
@@ -137,10 +160,15 @@ def set_dragging_resizing_js():
                 onUp = () => {
                   document.removeEventListener('mousemove', onMove);
                   document.removeEventListener('mouseup', onUp);
+
+                  // persist & override via CSS
+                  const finalTop  = el.style.top;
+                  const finalLeft = el.style.left;
                   localStorage.setItem(
                     'main-container-pos',
-                    JSON.stringify({ top: el.style.top, left: el.style.left })
+                    JSON.stringify({ top: finalTop, left: finalLeft })
                   );
+                  updateDefaultCSS(finalTop, finalLeft);
                 };
 
                 document.addEventListener('mousemove', onMove);
@@ -148,12 +176,27 @@ def set_dragging_resizing_js():
               });
             }
 
-            
+            // Immediately restore override on load
+            (function restoreOnLoad(){
+              const saved = localStorage.getItem('main-container-pos');
+              if (saved) {
+                try {
+                  const { top, left } = JSON.parse(saved);
+                  updateDefaultCSS(top, left);
+                } catch {}
+              }
+            })();
+
+            // NOTE -> NOT implemented currently
             function makeHelperDraggable() {
               const el = document.querySelector(
                 'div[id^="float-this-component"][style*="width: 315px"]'
               );
               if (!el) return;
+
+              const toggleEl = document.querySelector(
+                'div[id^="float-this-component"][style*="width: 2rem"]'
+              );
 
               // restore saved helper position
               const saved = localStorage.getItem('helper-panel-pos');
@@ -163,7 +206,6 @@ def set_dragging_resizing_js():
                   el.style.position = 'fixed';
                   el.style.top      = top;
                   el.style.left     = left;
-                  // also push the helper pseudos into place
                   if (helperBefore) {
                     helperBefore.style.top  = top;
                     helperBefore.style.left = left;
@@ -180,6 +222,14 @@ def set_dragging_resizing_js():
                 e.preventDefault();
                 const rect = el.getBoundingClientRect();
 
+                // record how far the toggle sits from the panel’s top-left
+                let toggleOffsetX = 0, toggleOffsetY = 0;
+                if (toggleEl) {
+                  const tR = toggleEl.getBoundingClientRect();
+                  toggleOffsetX = tR.left - rect.left;
+                  toggleOffsetY = tR.top  - rect.top;
+                }
+
                 // pin it
                 el.style.position = 'fixed';
                 el.style.left     = rect.left + 'px';
@@ -192,8 +242,16 @@ def set_dragging_resizing_js():
                   const newLeft = ox + (ev.clientX - sx);
                   const newTop  = oy + (ev.clientY - sy);
 
+                  // Move panel
                   el.style.left = newLeft + 'px';
                   el.style.top  = newTop  + 'px';
+
+                  // also move the toggle by the same offset
+                  if (toggleEl) {
+                    toggleEl.style.position = 'fixed';
+                    toggleEl.style.left     = (newLeft + toggleOffsetX) + 'px';
+                    toggleEl.style.top      = (newTop  + toggleOffsetY) + 'px';
+                  }
 
                   // move helper pseudos
                   if (helperBefore) {
@@ -222,8 +280,15 @@ def set_dragging_resizing_js():
             
             // —— Reset logic ——
             function resetPositions() {
-              ['main-container-pos','helper-panel-pos'].forEach(k => localStorage.removeItem(k));
-              // Target only two floated panels by their width markers
+              // 1) Clear stored positions
+              localStorage.removeItem('main-container-pos');
+              localStorage.removeItem('helper-panel-pos');
+
+              // 2) Remove our injected override stylesheet
+              const style = document.getElementById('main-pos-override');
+              if (style) style.remove();
+
+              // 3) Restore any inline positioning so the new panels render with pure CSS defaults
               document
                 .querySelectorAll(
                   'div[id^="float-this-component"][style*="width: 800px"], ' +
@@ -235,18 +300,31 @@ def set_dragging_resizing_js():
                   e.style.removeProperty('left');
                 });
 
-              // restore main pseudos to original css
-              if (mainBefore) { mainBefore.style.top = '8vh';    mainBefore.style.left = '23.5%'; }
-              if (mainAfter)  { mainAfter.style.top  = '8vh';    mainAfter.style.left  = '23.5%'; }
+              // 4) **Re‑apply your original pseudo‑element positions** (the part we missed)
+              if (mainBefore) {
+                mainBefore.style.top  = DEFAULT_TOP;
+                mainBefore.style.left = DEFAULT_LEFT;
+              }
+              if (mainAfter) {
+                mainAfter.style.top   = DEFAULT_TOP;
+                mainAfter.style.left  = DEFAULT_LEFT;
+              }
+              if (helperBefore) {
+                helperBefore.style.top   = DEFAULT_TOP;
+                helperBefore.style.left  = 'auto';
+                helperBefore.style.right = '0';
+              }
+              if (helperAfter) {
+                helperAfter.style.top    = DEFAULT_TOP;
+                helperAfter.style.left   = 'auto';
+                helperAfter.style.right  = '0';
+              }
 
-              // restore helper pseudos to original css
-              if (helperBefore) { helperBefore.style.top = '8vh';  helperBefore.style.left = 'auto'; helperBefore.style.right = '0'; }
-              if (helperAfter)  { helperAfter.style.top  = '8vh';  helperAfter.style.left = 'auto'; helperAfter.style.right = '0'; }
-
-              // Re‐center inputs
+              // 5) Finally, re‑center your inputs under the freshly‑reset panels
               centerChat();
               centerHelperInput();
             }
+
 
             // —— Keybind: R to reset, but ignore Ctrl+R / ⌘+R ——  
             document.addEventListener('keydown', e => {
@@ -268,11 +346,37 @@ def set_dragging_resizing_js():
               }
             }
 
+            // Change this so that we are changing BOTH positions of the toggle 
+            // NOTE -> NOT IMPLEMENTED currently
+            function positionToggle() {
+              const panel    = document.querySelector(
+                'div[id^="float-this-component"][style*="width: 315px"]'
+              );
+              const toggleEl = document.querySelector(
+                'div[id^="float-this-component"][style*="width: 2rem"]'
+              );
+              if (!panel || !toggleEl) return;
+
+              const pR = panel.getBoundingClientRect();
+              const tW = toggleEl.getBoundingClientRect().width;
+              const onRight = (pR.left + pR.width / 2) > window.innerWidth / 2;
+
+              toggleEl.style.position = 'fixed';
+              toggleEl.style.top      = pR.top + 'px';
+
+              // compute exactly where it should go
+              const newRight = onRight
+                ? (window.innerWidth - (pR.left) - tW) + 'px'
+                : (window.innerWidth - (pR.left + pR.width)) + 'px';
+
+              // **this will override your Python‐injected right with !important**
+              toggleEl.style.setProperty('right', newRight, 'important');
+            }
+
             // —— Initialize everything ——
             function initAll() {
               cacheShadowRules();
               makeMainDraggable();
-              makeHelperDraggable();
               centerChat();
               centerHelperInput();
               wireUploadPlus();
