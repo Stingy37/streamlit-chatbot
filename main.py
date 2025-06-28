@@ -3,7 +3,7 @@ import random
 import helper_chat
 import streamlit.components.v1 as components
 
-
+from live2D import live_2d_html
 from style import set_custom_css
 from javascript import set_dragging_resizing_js, set_styling_js
 from database import init_db, load_chat_messages
@@ -56,6 +56,29 @@ if st.session_state.active_chat_id:
     )
 else:
     st.session_state.messages = []
+
+
+################################################################################### LIVE 2D FLOATED PANEL ###########################################################################################
+
+live2d_slot = st.empty()
+live2d_container = live2d_slot.container(key="live2d_avatar_container")
+
+# Embed the Live2D iframe
+with live2d_container:
+    components.html(
+        live_2d_html,
+        width=400,    # Pixel width of the embedded html 
+        height=700,   # Pixel height of the embedded html 
+    )
+
+# Float it on screen
+live2d_pos = float_css_helper(
+    top="3vh",
+    bottom="3vh",
+    left="-100px",
+    z_index="9996",
+)
+live2d_container.float(live2d_pos)
 
 
 ################################################################################## HELPER CHAT LAYOUT ###########################################################################################
