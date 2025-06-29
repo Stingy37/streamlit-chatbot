@@ -6,7 +6,7 @@ import streamlit.components.v1 as components
 from live2D import live_2d_html
 from style import set_custom_css
 from javascript import set_dragging_resizing_js, set_styling_js
-from database import init_db, load_chat_messages
+from database import init_db, load_chat_messages, get_all_chats, create_chat
 from chat_handler import (
     sidebar_chat_sessions,
     handle_user_input,
@@ -20,6 +20,11 @@ from streamlit_float import float_init, float_css_helper
 
 
 ################################################################################## ON LOAD SETUPS ###########################################################################################
+
+# Collapse the sidebar initially
+st.set_page_config(
+    initial_sidebar_state="collapsed"
+)
 
 float_init()
 
@@ -40,8 +45,16 @@ set_custom_css(
 set_dragging_resizing_js()
 set_styling_js()
 
-# Initialize databases
+# Initialize databases 
 init_db()
+
+# First-visit: spin up a default chat
+all_chat_ids = get_all_chats()
+if not all_chat_ids:
+    default_id = create_chat("New Chat")
+    st.session_state.active_chat_id = default_id
+
+# Initialize session states
 initialize_session_state()
 helper_chat.init_helper_state()
 
@@ -76,7 +89,8 @@ live2d_pos = float_css_helper(
     top="3vh",
     bottom="3vh",
     left="-100px",
-    z_index="9996",
+    width="400px",
+    z_index="4",
 )
 live2d_container.float(live2d_pos)
 
@@ -103,7 +117,7 @@ def helper_fragment(active_chat_id: int):
         top="40vh",
         width="2rem",
         border_radius="0.5rem",
-        z_index="1",
+        z_index="10",
         **(
             {"right": "314px"}
             if st.session_state.helper_visible

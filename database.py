@@ -141,3 +141,25 @@ def load_rag_entries(chat_id):
     rows = cursor.fetchall()
     conn.close()
     return [{"content": r[0], "embedding": r[1]} for r in rows]
+
+def get_all_chats():
+    """Return list of all chat IDs."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM chats ORDER BY created_at ASC;")
+    ids = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return ids
+
+def create_chat(name: str = "New Chat") -> int:
+    """Create a new chat row and return its new ID."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO chats (name) VALUES (?);",
+        (name,)
+    )
+    conn.commit()
+    new_id = cursor.lastrowid
+    conn.close()
+    return new_id

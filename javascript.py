@@ -12,11 +12,14 @@ def set_dragging_resizing_js():
           parentScript.type = 'text/javascript';
           parentScript.text = `
 
-            // —— New: capture the original defaults ——  
+            // Capture the original defaults so that reset logic still works  
             const DEFAULT_TOP  = '8vh';  
             const DEFAULT_LEFT = '23.5%';
+            const DEFAULT_L2D_TOP   = '3vh';
+            const DEFAULT_L2D_LEFT  = '-100px';
 
-            // —— New: helper to inject/override default CSS ——  
+
+            // Helper to inject/override default CSS, so that no jumping happens on st.reruns ——  
             function updateDefaultCSS(top, left) {
               let style = document.getElementById('main-pos-override');
               if (!style) {
@@ -38,6 +41,41 @@ def set_dragging_resizing_js():
                 }
               \`;
             }
+
+            // Helper to inject/override Live2D’s default CSS so no jump on reruns   
+            function updateLive2DDefaultCSS(top, left) {
+              let style = document.getElementById('live2d-pos-override');
+              if (!style) {
+                style = document.createElement('style');
+                style.id = 'live2d-pos-override';
+                document.head.appendChild(style);
+              }
+              style.textContent = \`
+                /* target the same wrapper your drag code uses */
+                div[id^="float-this-component"][style*="width: 400px"] {
+                  position: fixed !important;
+                  top: \${top} !important;
+                  left: \${left} !important;
+                }
+              \`;
+            }
+
+
+            // Disable clicks on the iframe so that parent div is draggable 
+            function disableLive2DPointerEvents(){
+              // 1) find the float wrapper by its inline width:400px
+              const wrapper = document.querySelector(
+                'div[id^="float-this-component"][style*="width: 400px"]'
+              );
+              if (!wrapper) return;
+
+              // 2) find the actual iframe inside it
+              const live2dIframe = wrapper.querySelector('iframe');
+              if (live2dIframe) {
+                live2dIframe.style.pointerEvents = 'none';
+              }
+            }
+
 
           
             // Re-center main chat input under .block-container ——
@@ -187,6 +225,17 @@ def set_dragging_resizing_js():
               }
             })();
 
+            // Immediately restore Live2D override on load
+            (function restoreLive2DOnLoad(){
+              const saved = localStorage.getItem('live2d-pos');
+              if (saved) {
+                try {
+                  const { top, left } = JSON.parse(saved);
+                  updateLive2DDefaultCSS(top, left);
+                } catch {}
+              }
+            })();
+
             // NOTE -> NOT implemented currently
             function makeHelperDraggable() {
               const el = document.querySelector(
@@ -277,16 +326,86 @@ def set_dragging_resizing_js():
               });
             }
 
+            // —— Draggable for Live2D avatar ——  
+            function makeLive2DDraggable() {
+              const el = document.querySelector(
+                'div[id^="float-this-component"][style*="width: 400px"]'
+              );
+              if (!el) return;
+
+              // restore saved position on load
+              const savedLive2D = localStorage.getItem('live2d-pos');
+              if (savedLive2D) {
+                try {
+                  const { top, left } = JSON.parse(savedLive2D);
+                  el.style.position = 'fixed';
+                  el.style.top = top;
+                  el.style.left = left;
+                  updateLive2DDefaultCSS(top, left);
+                } catch {}
+              }
+
+              let startX, startY, origX, origY;
+              el.addEventListener('dblclick', e => {
+                e.preventDefault();
+
+                // Remove any fixed override so we can freely move again
+                const override = document.getElementById('live2d-pos-override');
+                if (override) override.remove();
+
+                const rect = el.getBoundingClientRect();
+
+                // pin exactly where it is
+                el.style.position = 'fixed';
+                el.style.top = rect.top + 'px';
+                el.style.left = rect.left + 'px';
+                el.style.removeProperty('transform');
+
+                startX = e.clientX; startY = e.clientY;
+                origX = rect.left; origY = rect.top;
+
+                function onMove(ev) {
+                  const dx = ev.clientX - startX;
+                  const dy = ev.clientY - startY;
+                  const newLeft = origX + dx;
+                  const newTop = origY + dy;
+
+                  el.style.left = newLeft + 'px';
+                  el.style.top = newTop + 'px';
+                }
+
+                function onUp() {
+                  document.removeEventListener('mousemove', onMove);
+                  document.removeEventListener('mouseup', onUp);
+
+                  // persist
+                  localStorage.setItem(
+                    'live2d-pos',
+                    JSON.stringify({ top: el.style.top, left: el.style.left })
+                  );
+                  updateLive2DDefaultCSS(el.style.top, el.style.left);
+
+                }
+
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+              });
+            }
             
+
             // —— Reset logic ——
             function resetPositions() {
               // 1) Clear stored positions
               localStorage.removeItem('main-container-pos');
               localStorage.removeItem('helper-panel-pos');
+              localStorage.removeItem('live2d-pos');
+
 
               // 2) Remove our injected override stylesheet
               const style = document.getElementById('main-pos-override');
               if (style) style.remove();
+              const l2dStyle = document.getElementById('live2d-pos-override');
+              if (l2dStyle) l2dStyle.remove();
 
               // 3) Restore any inline positioning so the new panels render with pure CSS defaults
               document
@@ -318,6 +437,16 @@ def set_dragging_resizing_js():
                 helperAfter.style.top    = DEFAULT_TOP;
                 helperAfter.style.left   = 'auto';
                 helperAfter.style.right  = '0';
+              }
+
+              // 6) restore Live2D to its original CSS defaults
+              const live2d = document.querySelector(
+                'div[id^="float-this-component"][style*="width: 400px"]'
+              );
+              if (live2d) {
+                live2d.style.removeProperty('position');
+                live2d.style.removeProperty('top');
+                live2d.style.removeProperty('left');
               }
 
               // 5) Finally, re‑center your inputs under the freshly‑reset panels
@@ -380,6 +509,8 @@ def set_dragging_resizing_js():
               centerChat();
               centerHelperInput();
               wireUploadPlus();
+              disableLive2DPointerEvents();
+              makeLive2DDraggable();
             }
 
             initAll();
