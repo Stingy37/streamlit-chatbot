@@ -2,8 +2,9 @@ import streamlit as st
 import random
 import helper_chat
 import streamlit.components.v1 as components
+import time
 
-from live2D import live_2d_html
+from live2D import live_2d_html, set_live_2d_emotion
 from style import set_custom_css
 from javascript import set_dragging_resizing_js, set_styling_js
 from database import init_db, load_chat_messages, get_all_chats, create_chat
@@ -73,6 +74,7 @@ else:
 
 ################################################################################### LIVE 2D FLOATED PANEL ###########################################################################################
 
+post_slot = st.empty()
 live2d_slot = st.empty()
 live2d_container = live2d_slot.container(key="live2d_avatar_container")
 
@@ -246,7 +248,10 @@ with main_chat:
             greeting_slot.empty()
 
         st.session_state.input_box = main_user_input
+
         handle_user_input()
+        set_live_2d_emotion(st.session_state.messages, post_slot)
+
 
 main_chat_pos = float_css_helper(
     top="8vh",
