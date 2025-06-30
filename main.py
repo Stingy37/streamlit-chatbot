@@ -60,9 +60,9 @@ initialize_session_state()
 helper_chat.init_helper_state()
 
 
-################################################################################## MAIN PAGE LAYOUT ###########################################################################################
+################################################################################## INITIAL SIDEBAR LAYOUT ###########################################################################################
 
-# Sidebar chat selections
+# Sidebar chat selections, also creates the "chat sessions" part of the sidebar
 sidebar_chat_sessions()
 if st.session_state.active_chat_id:
     st.session_state.messages = load_chat_messages(
@@ -71,6 +71,7 @@ if st.session_state.active_chat_id:
 else:
     st.session_state.messages = []
 
+# Add a button for customization 
 
 ################################################################################### LIVE 2D FLOATED PANEL ###########################################################################################
 
@@ -176,93 +177,95 @@ helper_fragment(st.session_state.active_chat_id)
 
 ################################################################################## MAIN CHAT FLOATED PANEL ###########################################################################################
 
+@st.fragment
+def main_fragment():
+    main_chat_slot = st.empty() # We must wrap in st.empty to avoid rerun styling "flashes"
+    main_chat = main_chat_slot.container(key="main_chat_panel")
 
-main_chat_slot = st.empty() # We must wrap in st.empty to avoid rerun styling "flashes"
-main_chat = main_chat_slot.container(key="main_chat_panel")
+    with main_chat:
+        # Avoid rerun styling flash
+        _input_slot = st.empty()
 
-with main_chat:
-    # Avoid rerun styling flash
-    _input_slot = st.empty()
+        st.markdown("<div style='height:3rem;'></div>", unsafe_allow_html=True)
 
-    st.markdown("<div style='height:3rem;'></div>", unsafe_allow_html=True)
+        # Add a initial randomized greeting message 
+        if not st.session_state.messages:
+            greetings = [
+                "What's on the agenda today?",
+                "Hello there! Ready to chat?",
+                "How can I help you?",
+                "Got questions? I'm all ears.",
+                "Hey! What's up?"
+            ]
+            greeting = random.choice(greetings)
 
-    # Add a initial randomized greeting message 
-    if not st.session_state.messages:
-        greetings = [
-            "What's on the agenda today?",
-            "Hello there! Ready to chat?",
-            "How can I help you?",
-            "Got questions? I'm all ears.",
-            "Hey! What's up?"
-        ]
-        greeting = random.choice(greetings)
-
-        greeting_slot = st.empty()
-        with greeting_slot:
-            st.markdown(
-                f'<div id="greeting">{greeting}</div>', # Use the ID here to target it in CSS
-                unsafe_allow_html=True
-            )
+            greeting_slot = st.empty()
+            with greeting_slot:
+                st.markdown(
+                    f'<div id="greeting">{greeting}</div>', # Use the ID here to target it in CSS
+                    unsafe_allow_html=True
+                )
 
 
-    display_chat_history()
+        display_chat_history()
 
-    # Create the container object via the empty slot
-    main_input_container = _input_slot.container()
+        # Create the container object via the empty slot
+        main_input_container = _input_slot.container()
 
-    # Float it immediately
-    main_input_pos = float_css_helper(
-        top="auto",
-        bottom="90px",
-        height="auto",
-        width="770px",
-        border_radius="0.5rem",
-        background_color="rgba(37,38,50, 1.0)",
-        padding="0.5rem",
-        z_index="9999",
-    )
-    main_input_container.float(main_input_pos)
-
-    # Render actual chat input inside 
-    with main_input_container:
-        main_user_input = st.chat_input(
-            "Ask anything",
-            key=f"main_input_{st.session_state.active_chat_id}"
+        # Float it immediately
+        main_input_pos = float_css_helper(
+            top="auto",
+            bottom="90px",
+            height="auto",
+            width="770px",
+            border_radius="0.5rem",
+            background_color="rgba(37,38,50, 1.0)",
+            padding="0.5rem",
+            z_index="9999",
         )
+        main_input_container.float(main_input_pos)
 
-        col_u, col_m = st.columns([0.12, 0.88], gap="small")
-        with col_u:
-            st.markdown('<div class="file-upload-button">+</div>', unsafe_allow_html=True)
-        with col_m:
-            st.selectbox(
-                label="placeholder",
-                options=["gpt-4o", "gpt-4.5-preview", "o4-mini", "o4-mini-high"],
-                key="model",
-                label_visibility="collapsed"
+        # Render actual chat input inside 
+        with main_input_container:
+            main_user_input = st.chat_input(
+                "Ask anything",
+                key=f"main_input_{st.session_state.active_chat_id}"
             )
 
-    # Handle input submission 
-    if main_user_input:
-        # First, check to see if greeting div exists, if so, remove it 
-        if "greeting_slot" in locals():
-            greeting_slot.empty()
+            col_u, col_m = st.columns([0.12, 0.88], gap="small")
+            with col_u:
+                st.markdown('<div class="file-upload-button">+</div>', unsafe_allow_html=True)
+            with col_m:
+                st.selectbox(
+                    label="placeholder",
+                    options=["gpt-4o", "gpt-4.5-preview", "o4-mini", "o4-mini-high"],
+                    key="model",
+                    label_visibility="collapsed"
+                )
 
-        st.session_state.input_box = main_user_input
+        # Handle input submission 
+        if main_user_input:
+            # First, check to see if greeting div exists, if so, remove it 
+            if "greeting_slot" in locals():
+                greeting_slot.empty()
 
-        handle_user_input()
-        set_live_2d_emotion(st.session_state.messages, post_slot)
+            st.session_state.input_box = main_user_input
+
+            handle_user_input()
+            set_live_2d_emotion(st.session_state.messages, post_slot)
 
 
-main_chat_pos = float_css_helper(
-    top="8vh",
-    bottom="8vh",
-    width="800px",
-    border_radius="0.5rem",
-    z_index="9997",
-    left="23.5%",
-)
-main_chat.float(main_chat_pos)
+    main_chat_pos = float_css_helper(
+        top="8vh",
+        bottom="8vh",
+        width="800px",
+        border_radius="0.5rem",
+        z_index="9997",
+        left="23.5%",
+    )
+    main_chat.float(main_chat_pos)
 
+main_fragment()
 
 hidden_uploader = st.container()
 

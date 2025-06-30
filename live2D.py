@@ -52,9 +52,8 @@ def set_live_2d_emotion(chat_history, post_slot): # Where chat_history is st.ses
 
     emotion = response.choices[0].message.content.strip().lower()
 
-    print(f"Choosen emotion: {emotion}")
     if emotion not in emotion_choices:
-        emotion = "neutral"
+        emotion = "f04"
 
     # Send emotion to ws server
     try:
@@ -94,11 +93,29 @@ live_2d_html = """<!DOCTYPE html>
 <body>
   <canvas id="live2d-canvas"></canvas>
   <script>
+    PIXI.Renderer.registerPlugin(
+        'interaction',
+        PIXI.InteractionManager
+    );
+
+
+     console.log(
+      '[Debug] Before app creation – interaction plugin:',
+      Boolean(PIXI.Renderer?.plugins?.interaction)
+    );
+
     const app = new PIXI.Application({
       view: document.getElementById('live2d-canvas'),
       resizeTo: window,
       backgroundAlpha: 0,  // ← keep model background fully transparent
     });
+
+    console.log(
+      '[Debug] After app creation – interaction plugin:',
+      Boolean(app.renderer.plugins.interaction),
+      app.renderer.plugins.interaction
+    );
+
 
     // Declare model in the outer scope
     let model = null;
@@ -125,55 +142,61 @@ live_2d_html = """<!DOCTYPE html>
     });
 
     (async () => {
-    // 1. fetch the raw model JSON
-    const MODEL_URL = 'https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/haru/haru_greeter_t03.model3.json';
-    const resp = await fetch(MODEL_URL);
-    if (!resp.ok) {
-        console.error(`Failed to load model JSON: ${resp.status}`);
-        return;
-    }
-    const modelJson = await resp.json();
-    modelJson.url = MODEL_URL;
+        // 1. fetch the raw model JSON
+        const MODEL_URL = 'https://cdn.jsdelivr.net/gh/guansss/pixi-live2d-display/test/assets/haru/haru_greeter_t03.model3.json';
+        const resp = await fetch(MODEL_URL);
+        if (!resp.ok) {
+            console.error(`Failed to load model JSON: ${resp.status}`);
+            return;
+        }
+        const modelJson = await resp.json();
+        modelJson.url = MODEL_URL;
 
-    // Wrap in the Cubism4 settings class, and load from settings object
-    const settings = new PIXI.live2d.Cubism4ModelSettings(modelJson);
-    const loadedModel = await PIXI.live2d.Live2DModel.from(settings);
-    model = loadedModel;
+        // Wrap in the Cubism4 settings class, and load from settings object
+        const settings = new PIXI.live2d.Cubism4ModelSettings(modelJson);
+        const loadedModel = await PIXI.live2d.Live2DModel.from(settings);
+        model = loadedModel;
 
-      // Grab the ExpressionManager and load expressions
-    const mgr = model.internalModel.motionManager.expressionManager;
-    if (mgr && mgr.definitions.length) {
-        // kick off loads for each definition
-        mgr.definitions.forEach((_, idx) => {
-        mgr.loadExpression(idx).then(expr => {
-            console.log(`[Live2D] expression #${idx} loaded`, expr);
+        // Grab the ExpressionManager and load expressions
+        const mgr = model.internalModel.motionManager.expressionManager;
+        if (mgr && mgr.definitions.length) {
+            // kick off loads for each definition
+            mgr.definitions.forEach((_, idx) => {
+            mgr.loadExpression(idx).then(expr => {
+                console.log(`[Live2D] expression #${idx} loaded`, expr);
+            });
+            });
+        }
+
+        // Print expressions 
+        const defs = model.internalModel.settings.expressions;
+        defs.forEach((expDef, i) => {
+            console.log(`Definition #${i}:`, expDef.Name, "→", expDef.File);
         });
-        });
-    }
 
-    // Print expressions 
-    const defs = model.internalModel.settings.expressions;
-    defs.forEach((expDef, i) => {
-        console.log(`Definition #${i}:`, expDef.Name, "→", expDef.File);
-    });
+        // Build a name -> index lookup
+        const nameToIndex = Object.fromEntries(
+            model.internalModel.settings.expressions.map((def, i) => [def.Name, i])
+        );
 
-    // Build a name -> index lookup
-    const nameToIndex = Object.fromEntries(
-        model.internalModel.settings.expressions.map((def, i) => [def.Name, i])
-    );
+        // Print entire model settings
+        console.log(
+            "[Live2D DEBUG] settings keys:",
+            Object.keys(model.internalModel.settings)
+        );
 
-    // Print entire model settings
-    console.log(
-        "[Live2D DEBUG] settings keys:",
-        Object.keys(model.internalModel.settings)
-    );
+        console.log(
+            '[Debug] Before model.addChild – interaction plugin:',
+            Boolean(app.renderer.plugins.interaction),
+            app.renderer.plugins.interaction
+        );
 
-    // Place the model
-    model.scale.set(0.16);
-    model.anchor.set(0.5, 0.5);
-    model.x = app.renderer.width / 2;
-    model.y = app.renderer.height / 2;
-    app.stage.addChild(model);
+        // Place the model
+        model.scale.set(0.16);
+        model.anchor.set(0.5, 0.5);
+        model.x = app.renderer.width / 2;
+        model.y = app.renderer.height / 2;
+        app.stage.addChild(model);
 
     })().catch(console.error);
 
