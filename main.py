@@ -36,6 +36,9 @@ if 'logging_initialized' not in st.session_state:
 if 'helper_visible' not in st.session_state:
     st.session_state.helper_visible = False
 
+if "customize_mode" not in st.session_state:
+    st.session_state.customize_mode = False
+
 # CSS and JS to load 
 set_custom_css(
     background_image_path='background_art/background_3.jpg',
@@ -59,11 +62,7 @@ if not all_chat_ids:
 initialize_session_state()
 helper_chat.init_helper_state()
 
-
-################################################################################## INITIAL SIDEBAR LAYOUT ###########################################################################################
-
-# Sidebar chat selections, also creates the "chat sessions" part of the sidebar
-sidebar_chat_sessions()
+# Initialize the active chat 
 if st.session_state.active_chat_id:
     st.session_state.messages = load_chat_messages(
         st.session_state.active_chat_id
@@ -71,8 +70,171 @@ if st.session_state.active_chat_id:
 else:
     st.session_state.messages = []
 
-# Add a button for customization 
 
+############################################################################## INITIAL SIDEBAR LAYOUT ###########################################################################################
+
+
+with st.sidebar:
+    # Non-customization mode sidebar
+    if not st.session_state.customize_mode:
+        sidebar_chat_sessions() # Add all the chat session sidebar items
+
+        st.divider()
+        st.title("Settings")
+         
+        if st.button("Customize Style"):
+            st.session_state.customize_mode = True
+            st.rerun()
+
+
+############################################################################# CUSTOMIZATION SIDEBAR LAYOUT ###########################################################################################
+
+
+    # Customization mode sidebar (upon first opening, all of these values should be from style already present—except for those that rely on file uploads, like gif and background image)
+    if st.session_state.customize_mode: 
+        if st.button("Back"):
+            st.session_state.customize_mode = False
+            st.rerun()
+        
+
+        #############################################################################
+
+        st.divider()
+        st.title("Manage Styles")
+        
+        current_style_name = st.sidebar.text_input("Current Style Name:")
+        if st.sidebar.button("Save Style"):
+            # Stip the input in current_style_name and use a module function to handle saving the input (and the current CSS) to a database, 
+            # linking CSS with a name to create the effect of "saving" a style. Ideally, this grabs EACH parameterized CSS value and saves it. 
+            pass
+
+        styles = ["style_one", "style_two"] # Placeholder to visualize UI, in practice we would load from aforementioned database 
+        if styles:
+            selected_style_index = st.sidebar.selectbox(
+                "Select a saved style:",
+                range(len(styles)),
+                format_func=lambda idx: styles[idx],
+            )
+            # Then, use a handler function where the handler function injects the associated CSS with what the user chooses   
+        else:
+            st.sidebar.info("No styles. Create a new one below.")
+
+        #############################################################################
+
+
+        st.divider()
+        st.title("Background")
+
+        background_image = st.file_uploader(
+            label="Background image",                     
+            type=["png", "jpg", "jpeg"],
+            accept_multiple_files=False,
+            key=f"background_image_uploader",
+            label_visibility="visible"
+        )
+        if background_image:
+            # 1st, some handler function that immediately changes the CSS to reflect the uploaded image
+
+            # 2nd, add ability to adjust position, blur, and scaling (and these should apply to the CSS as they are being adjusted, ideally)
+            image_x_pos       = st.slider("X Position",   min_value=0,   max_value=100,   value=50,   help="Horizontal offset (%)",  key="image_x_pos")
+            image_y_pos       = st.slider("Y Position",   min_value=0,   max_value=100,   value=50,   help="Vertical offset (%)",    key="image_y_pos")
+            image_scaling     = st.slider("Scaling",      min_value=0.1, max_value=3.0,   value=1.0, step=0.1, help="Scale factor",  key="image_scaling")
+            image_blur        = st.slider("Blur strength",min_value=0,   max_value=50,    value=0,             help="Blur Strength", key="image_blur")
+        
+        gif = st.file_uploader(
+            label="Optional animated effects",                     
+            type=["gif"],
+            accept_multiple_files=False,
+            key=f"gif_uploader",
+            label_visibility="visible"
+        )
+        if gif:
+            # 1st, some handler function that immediately changes the CSS to reflect the uploaded gif
+
+            gif_flip       = st.checkbox("Flip vertically", value=False,  help="Flip the gif vertically",                      key="gif_flip")
+            smooth_looping = st.checkbox("Smooth looping",  value=True,   help="Enable fade in / fade out for seamless loops", key="smooth_looping")
+            gif_count      = st.slider("Size",          min_value=1, max_value=3,  value=1, step = 1, help="How many copies of the GIF to fill the screen width", key="gif_count" )
+            gif_blur       = st.slider("Blur strength", min_value=0, max_value=50, value=0,           help="How strong the blur is",                              key="gif_blur")
+
+
+        #############################################################################
+
+        st.divider()
+        st.title("Chat Panels")
+
+        chat_primary_background_color = st.color_picker(
+            label="Chat primary background color",
+            value="#ffffff",              # default color should be whatever the current style is
+            help="Primary background color for chat panels",
+            key="chat_primary_background_color"
+        )
+        chat_secondary_background_color = st.color_picker(
+            label="Chat secondary background color",
+            value="#ffffff",              # default color should be whatever the current style is
+            help="Secondary background color for chat panels",
+            key="chat_secondary_background_color"
+        )
+        chat_blur           = st.slider("Blur strength", min_value=0,   max_value=50,    value=0,    help="How strong the blur is",   key="chat_blur") 
+        chat_glow_strength  = st.slider("Glow strength", min_value=0,   max_value=50,    value=0,    help="How strong the glow is",   key="chat_glow_strength") 
+        chat_glow_radius    = st.slider("Glow size",     min_value=0,   max_value=50,    value=0,    help="How far the glow extends", key="chat_glow_radius") 
+        chat_glow_color = st.color_picker(
+            label="Chat glow color",
+            value="#ffffff",              # default color should be whatever the current style is
+            help="Color for the glow effect behind chat panels",
+            key="chat_glow_color"
+        )
+
+        #############################################################################
+
+        st.divider()
+        st.title("Chat Input")
+        
+        chat_input_color = st.color_picker(
+            label="Chat input color",
+            value="#ffffff",              # default color should be whatever the current style is
+            help="Primary color for chat input area",
+            key="chat_input_color"
+        )
+        chat_input_glow_color = st.color_picker(
+            label="Chat input glow color",
+            value="#ffffff",              # default color should be whatever the current style is
+            help="Color for the glow effect behind chat input area",
+            key="chat_input_glow_color"
+        )
+        chat_input_glow_strength  = st.slider("Glow strength", min_value=0,   max_value=50,    value=0,    help="How strong the glow is",   key="chat_input_glow_strength") 
+        chat__input_glow_radius    = st.slider("Glow size",     min_value=0,   max_value=50,    value=0,    help="How far the glow extends", key="chat__input_glow_radius") 
+
+        #############################################################################
+
+        st.divider()
+        st.title("Live2D Model")
+
+        models = ["model_one", "model_two"] # Placeholder to visualize UI, in practice we would load from a predefined list. 
+                                            # Each model in the list will have a corresponding live_2d_html, which we then load accordingly. 
+                                            # Also, emotion_choices and emotion_meaning will be different per model. 
+        if models:
+            selected_model_index = st.sidebar.selectbox(
+                "Select a model:",
+                range(len(models)),
+                format_func=lambda idx: models[idx],
+            )
+            model_scaling     = st.slider("Model scaling",      min_value=0.01, max_value=.30,   value=.18, step=0.01, help="Scale factor",  key="model_scaling")
+
+        #############################################################################
+
+        st.divider()
+        st.title("Global Settings")
+
+        fonts = ["font_one", "font_two"] # Placeholders, replace this with popular / stylish looking fonts that can be passed as a CSS parameter
+        if fonts:
+            selected_font_index = st.sidebar.selectbox(
+                "Select a font:",
+                range(len(fonts)),
+                format_func=lambda idx: fonts[idx],
+            )
+        # Either way, have the ability to choose a font size (if no font selected, then we can STILL apply this as a CSS parameter)
+        font_scale  = st.slider("Font scale", min_value=.5,   max_value=1.5,    value=.1,    help="How large the font is",   key="font_scale") 
+        
 ################################################################################### LIVE 2D FLOATED PANEL ###########################################################################################
 
 post_slot = st.empty()
@@ -289,4 +451,5 @@ hidden_pos = float_css_helper(
     z_index="-1",             # behind everything
 )
 hidden_uploader.float(hidden_pos)
+
 

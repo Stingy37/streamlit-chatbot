@@ -36,7 +36,7 @@ def sidebar_chat_sessions():
     chat_ids = [chat[0] for chat in chats]
     if chats:
         selected_chat_index = st.sidebar.selectbox(
-            "Select a chat session",
+            "Select a chat session:",
             range(len(chat_names)),
             format_func=lambda idx: chat_names[idx],
         )
@@ -51,7 +51,7 @@ def sidebar_chat_sessions():
         document_text = load_document_text(st.session_state.active_chat_id)
         st.session_state.document_text[st.session_state.active_chat_id] = document_text
 
-    new_chat_name = st.sidebar.text_input("New chat name")
+    new_chat_name = st.sidebar.text_input("New chat name:")
     if st.sidebar.button("Create New Chat"):
         if new_chat_name.strip():
             cursor.execute("SELECT id FROM chats WHERE name = ?", (new_chat_name.strip(),))
@@ -85,18 +85,18 @@ def sidebar_chat_sessions():
                 logging.error(f"Error deleting chat: {e}")
                 st.sidebar.error(f"An error occurred while deleting the chat: {e}")
 
-    if st.session_state.active_chat_id:
-        rename_chat_name = st.sidebar.text_input("Rename chat")
-        if st.sidebar.button("Rename"):
-            if rename_chat_name.strip():
-                cursor.execute("""
-                UPDATE chats SET name = ? WHERE id = ?
-                """, (rename_chat_name.strip(), st.session_state.active_chat_id))
-                conn.commit()
-                st.sidebar.success("Chat renamed.")
-                st.rerun()
-            else:
-                st.sidebar.error("Please enter a valid chat name.")
+    # if st.session_state.active_chat_id:
+    #     rename_chat_name = st.sidebar.text_input("Rename chat")
+    #     if st.sidebar.button("Rename"):
+    #         if rename_chat_name.strip():
+    #             cursor.execute("""
+    #             UPDATE chats SET name = ? WHERE id = ?
+    #             """, (rename_chat_name.strip(), st.session_state.active_chat_id))
+    #             conn.commit()
+    #             st.sidebar.success("Chat renamed.")
+    #             st.rerun()
+    #         else:
+    #             st.sidebar.error("Please enter a valid chat name.")
 
     conn.close()
 

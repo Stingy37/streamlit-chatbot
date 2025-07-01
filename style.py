@@ -49,12 +49,13 @@ def set_custom_css(
       }}
 
       /* Toggle button */
-      .element-container:nth-of-type(1) .stButton:nth-of-type(1) button {{
+      .stElementContainer.st-key-toggle_helper .stButton button {{
         height: 10em;
         width: 2rem;
         background-color: rgba(14,17,23,0.6);
         backdrop-filter: blur(10px);
       }}
+
 
       html {{
         font-size: 100%;
