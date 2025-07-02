@@ -26,7 +26,7 @@ def initialize_session_state():
         st.session_state.messages = []
 
 def sidebar_chat_sessions():
-    st.sidebar.title("Chat Sessions")
+    st.title("Chat Sessions")
     conn = sqlite3.connect("chat_history.db")
     conn.execute("PRAGMA foreign_keys = ON;")
     cursor = conn.cursor()
@@ -35,7 +35,7 @@ def sidebar_chat_sessions():
     chat_names = [chat[1] for chat in chats]
     chat_ids = [chat[0] for chat in chats]
     if chats:
-        selected_chat_index = st.sidebar.selectbox(
+        selected_chat_index = st.selectbox(
             "Select a chat session:",
             range(len(chat_names)),
             format_func=lambda idx: chat_names[idx],
@@ -43,39 +43,40 @@ def sidebar_chat_sessions():
         st.session_state.active_chat_id = chat_ids[selected_chat_index]
     else:
         st.session_state.active_chat_id = None
-        st.sidebar.info("No chat sessions. Create a new one below.")
+        st.info("No chat sessions. Create a new one below.")
 
     if st.session_state.active_chat_id != st.session_state.get("previous_chat_id"):
         st.session_state.previous_chat_id = st.session_state.active_chat_id
         st.session_state.messages = load_chat_messages(st.session_state.active_chat_id)
         document_text = load_document_text(st.session_state.active_chat_id)
         st.session_state.document_text[st.session_state.active_chat_id] = document_text
+        st.rerun() # Force a full rerun because we are in a fragment
 
-    new_chat_name = st.sidebar.text_input("New chat name:")
-    if st.sidebar.button("Create New Chat"):
+    new_chat_name = st.text_input("New chat name:")
+    if st.button("Create New Chat"):
         if new_chat_name.strip():
             cursor.execute("SELECT id FROM chats WHERE name = ?", (new_chat_name.strip(),))
             existing_chat = cursor.fetchone()
             if existing_chat:
-                st.sidebar.error("A chat with that name already exists. Please choose another name.")
+                st.error("A chat with that name already exists. Please choose another name.")
             else:
                 cursor.execute("INSERT INTO chats (name) VALUES (?)", (new_chat_name.strip(),))
                 conn.commit()
-                st.sidebar.success(f"Chat '{new_chat_name}' created.")
+                st.success(f"Chat '{new_chat_name}' created.")
                 st.session_state.active_chat_id = cursor.lastrowid
                 st.session_state.messages = []
                 st.session_state.document_text[st.session_state.active_chat_id] = ''
                 st.rerun()
         else:
-            st.sidebar.error("Please enter a chat name.")
+            st.error("Please enter a chat name.")
 
     if st.session_state.active_chat_id:
-        if st.sidebar.button("Delete Chat"):
+        if st.button("Delete Chat"):
             chat_id = st.session_state.active_chat_id
             try:
                 cursor.execute("DELETE FROM chats WHERE id = ?", (chat_id,))
                 conn.commit()
-                st.sidebar.success("Chat deleted.")
+                st.success("Chat deleted.")
                 if chat_id in st.session_state.document_text:
                     del st.session_state.document_text[chat_id]
                 st.session_state.active_chat_id = None
@@ -83,7 +84,7 @@ def sidebar_chat_sessions():
                 st.rerun()
             except Exception as e:
                 logging.error(f"Error deleting chat: {e}")
-                st.sidebar.error(f"An error occurred while deleting the chat: {e}")
+                st.sebar.error(f"An error occurred while deleting the chat: {e}")
 
     # if st.session_state.active_chat_id:
     #     rename_chat_name = st.sidebar.text_input("Rename chat")

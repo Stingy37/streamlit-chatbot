@@ -22,6 +22,7 @@ from streamlit_float import float_init, float_css_helper
 
 ################################################################################## ON LOAD SETUPS ###########################################################################################
 
+
 # Collapse the sidebar initially
 st.set_page_config(
     initial_sidebar_state="collapsed"
@@ -74,7 +75,8 @@ else:
 ############################################################################## INITIAL SIDEBAR LAYOUT ###########################################################################################
 
 
-with st.sidebar:
+@st.fragment
+def sidebar_fragment():
     # Non-customization mode sidebar
     if not st.session_state.customize_mode:
         sidebar_chat_sessions() # Add all the chat session sidebar items
@@ -86,9 +88,7 @@ with st.sidebar:
             st.session_state.customize_mode = True
             st.rerun()
 
-
-############################################################################# CUSTOMIZATION SIDEBAR LAYOUT ###########################################################################################
-
+    ############################################################################# CUSTOMIZATION SIDEBAR LAYOUT ###########################################################################################
 
     # Customization mode sidebar (upon first opening, all of these values should be from style already present—except for those that rely on file uploads, like gif and background image)
     if st.session_state.customize_mode: 
@@ -102,22 +102,22 @@ with st.sidebar:
         st.divider()
         st.title("Manage Styles")
         
-        current_style_name = st.sidebar.text_input("Current Style Name:")
-        if st.sidebar.button("Save Style"):
+        current_style_name = st.text_input("Current Style Name:")
+        if st.button("Save Style"):
             # Stip the input in current_style_name and use a module function to handle saving the input (and the current CSS) to a database, 
             # linking CSS with a name to create the effect of "saving" a style. Ideally, this grabs EACH parameterized CSS value and saves it. 
             pass
 
         styles = ["style_one", "style_two"] # Placeholder to visualize UI, in practice we would load from aforementioned database 
         if styles:
-            selected_style_index = st.sidebar.selectbox(
+            selected_style_index = st.selectbox(
                 "Select a saved style:",
                 range(len(styles)),
                 format_func=lambda idx: styles[idx],
             )
             # Then, use a handler function where the handler function injects the associated CSS with what the user chooses   
         else:
-            st.sidebar.info("No styles. Create a new one below.")
+            st.info("No styles. Create a new one below.")
 
         #############################################################################
 
@@ -175,14 +175,14 @@ with st.sidebar:
             key="chat_secondary_background_color"
         )
         chat_blur           = st.slider("Blur strength", min_value=0,   max_value=50,    value=0,    help="How strong the blur is",   key="chat_blur") 
-        chat_glow_strength  = st.slider("Glow strength", min_value=0,   max_value=50,    value=0,    help="How strong the glow is",   key="chat_glow_strength") 
-        chat_glow_radius    = st.slider("Glow size",     min_value=0,   max_value=50,    value=0,    help="How far the glow extends", key="chat_glow_radius") 
         chat_glow_color = st.color_picker(
             label="Chat glow color",
             value="#ffffff",              # default color should be whatever the current style is
             help="Color for the glow effect behind chat panels",
             key="chat_glow_color"
         )
+        chat_glow_strength  = st.slider("Glow strength", min_value=0,   max_value=50,    value=0,    help="How strong the glow is",   key="chat_glow_strength") 
+        chat_glow_radius    = st.slider("Glow size",     min_value=0,   max_value=50,    value=0,    help="How far the glow extends", key="chat_glow_radius") 
 
         #############################################################################
 
@@ -213,7 +213,7 @@ with st.sidebar:
                                             # Each model in the list will have a corresponding live_2d_html, which we then load accordingly. 
                                             # Also, emotion_choices and emotion_meaning will be different per model. 
         if models:
-            selected_model_index = st.sidebar.selectbox(
+            selected_model_index = st.selectbox(
                 "Select a model:",
                 range(len(models)),
                 format_func=lambda idx: models[idx],
@@ -227,15 +227,20 @@ with st.sidebar:
 
         fonts = ["font_one", "font_two"] # Placeholders, replace this with popular / stylish looking fonts that can be passed as a CSS parameter
         if fonts:
-            selected_font_index = st.sidebar.selectbox(
+            selected_font_index = st.selectbox(
                 "Select a font:",
                 range(len(fonts)),
                 format_func=lambda idx: fonts[idx],
             )
         # Either way, have the ability to choose a font size (if no font selected, then we can STILL apply this as a CSS parameter)
         font_scale  = st.slider("Font scale", min_value=.5,   max_value=1.5,    value=.1,    help="How large the font is",   key="font_scale") 
+
+with st.sidebar:
+    sidebar_fragment()
         
+
 ################################################################################### LIVE 2D FLOATED PANEL ###########################################################################################
+
 
 post_slot = st.empty()
 live2d_slot = st.empty()
@@ -246,14 +251,31 @@ with live2d_container:
     components.html(
         live_2d_html,
         width=400,    # Pixel width of the embedded html 
-        height=700,   # Pixel height of the embedded html 
+        height=800,   # Pixel height of the embedded html 
     )
+
+st.markdown( # Note -> for some reason, live2D cursor following works here, but NOT if we put this into style.py, so just leave it here 
+    """
+    <style>
+      /* 1) The outer flex container Streamlit created */
+      div[id^="float-this-component"][style*="width: 400px"] {
+        pointer-events: none;
+      }
+      /* 2) The immediate ElementContainer and the iframe it holds */
+      .stElementContainer, 
+      .stIFrame {
+        pointer-events: auto !important;
+      }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 
 # Float it on screen
 live2d_pos = float_css_helper(
-    top="3vh",
-    bottom="3vh",
-    left="-100px",
+    bottom="-40px",
+    left="-70px",
     width="400px",
     z_index="4",
 )
@@ -261,6 +283,7 @@ live2d_container.float(live2d_pos)
 
 
 ################################################################################## HELPER CHAT LAYOUT ###########################################################################################
+
 
  # Wrap the helper-chat UI into a fragment so it reruns independently (do NOT write into fragment containers from outside—keep things independent)
 @st.fragment
@@ -338,6 +361,7 @@ helper_fragment(st.session_state.active_chat_id)
 
 
 ################################################################################## MAIN CHAT FLOATED PANEL ###########################################################################################
+
 
 @st.fragment
 def main_fragment():

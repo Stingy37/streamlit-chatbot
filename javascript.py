@@ -4,7 +4,7 @@ import streamlit.components.v1 as components
 
 def set_dragging_resizing_js():
     components.html(
-        """
+        r"""
         <script>
           console.log("iframe JS loaded — injecting full drag & follow logic into parent…");
 
@@ -326,71 +326,115 @@ def set_dragging_resizing_js():
               });
             }
 
-            // —— Draggable for Live2D avatar ——  
+            // —— Draggable for Live2D avatar ——
             function makeLive2DDraggable() {
-              const el = document.querySelector(
+              // 1) find your floated container
+              const container = document.querySelector(
                 'div[id^="float-this-component"][style*="width: 400px"]'
               );
-              if (!el) return;
+              if (!container) {
+                console.warn('Live2D container not found');
+                return;
+              }
 
-              // restore saved position on load
-              const savedLive2D = localStorage.getItem('live2d-pos');
-              if (savedLive2D) {
+              // 2) find its iframe
+              const iframe = container.querySelector('iframe');
+              if (!iframe) {
+                console.warn('Live2D iframe not found');
+                return;
+              }
+
+              // 3) restore saved position on load
+              const saved = localStorage.getItem('live2d-pos');
+              if (saved) {
                 try {
-                  const { top, left } = JSON.parse(savedLive2D);
-                  el.style.position = 'fixed';
-                  el.style.top = top;
-                  el.style.left = left;
+                  const { top, left } = JSON.parse(saved);
+                  container.style.position = 'fixed';
+                  container.style.top = top;
+                  container.style.left = left;
+                  // re‑apply your CSS override so pseudo‑elements track
                   updateLive2DDefaultCSS(top, left);
                 } catch {}
               }
 
-              let startX, startY, origX, origY;
-              el.addEventListener('dblclick', e => {
-                e.preventDefault();
-
-                // Remove any fixed override so we can freely move again
-                const override = document.getElementById('live2d-pos-override');
-                if (override) override.remove();
-
-                const rect = el.getBoundingClientRect();
-
-                // pin exactly where it is
-                el.style.position = 'fixed';
-                el.style.top = rect.top + 'px';
-                el.style.left = rect.left + 'px';
-                el.style.removeProperty('transform');
-
-                startX = e.clientX; startY = e.clientY;
-                origX = rect.left; origY = rect.top;
-
-                function onMove(ev) {
-                  const dx = ev.clientX - startX;
-                  const dy = ev.clientY - startY;
-                  const newLeft = origX + dx;
-                  const newTop = origY + dy;
-
-                  el.style.left = newLeft + 'px';
-                  el.style.top = newTop + 'px';
+              // 4) when the iframe’s document is ready, grab the canvas
+              function setupDragOnCanvas() {
+                const cw = iframe.contentWindow;
+                const doc = cw.document;
+                const canvas = doc.getElementById('live2d-canvas');
+                if (!canvas) {
+                  console.warn('Canvas inside iframe not found');
+                  return;
                 }
 
-                function onUp() {
-                  document.removeEventListener('mousemove', onMove);
-                  document.removeEventListener('mouseup', onUp);
+                let startX, startY, origX, origY;
 
-                  // persist
-                  localStorage.setItem(
-                    'live2d-pos',
-                    JSON.stringify({ top: el.style.top, left: el.style.left })
-                  );
-                  updateLive2DDefaultCSS(el.style.top, el.style.left);
+                canvas.addEventListener('dblclick', e => {
+                  e.preventDefault();
 
-                }
+                  // remove any previous override so we can use free positioning
+                  const override = document.getElementById('live2d-pos-override');
+                  if (override) override.remove();
 
-                document.addEventListener('mousemove', onMove);
-                document.addEventListener('mouseup', onUp);
-              });
+                  // pin container exactly where it is
+                  const rect = container.getBoundingClientRect();
+                  container.style.position = 'fixed';
+                  container.style.top = rect.top + 'px';
+                  container.style.left = rect.left + 'px';
+                  container.style.removeProperty('transform');
+
+                  // record start coords
+                  startX = e.clientX;
+                  startY = e.clientY;
+                  origX = rect.left;
+                  origY = rect.top;
+
+                  // add a full‑screen blocker to capture mouse events
+                  const blocker = document.createElement('div');
+                  blocker.id = 'iframe-drag-blocker';
+                  Object.assign(blocker.style, {
+                    position: 'fixed',
+                    top: '0', left: '0',
+                    width: '100vw', height: '100vh',
+                    zIndex: '9999',
+                    cursor: 'grabbing',
+                    background: 'transparent'
+                  });
+                  document.body.appendChild(blocker);
+
+                  // drag logic
+                  function onMove(ev) {
+                    const dx = ev.clientX - startX;
+                    const dy = ev.clientY - startY;
+                    container.style.left = (origX + dx) + 'px';
+                    container.style.top = (origY + dy) + 'px';
+                  }
+
+                  function onUp() {
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                    const b = document.getElementById('iframe-drag-blocker');
+                    if (b) b.remove();
+
+                    // persist and re‑apply CSS override
+                    const top = container.style.top;
+                    const left = container.style.left;
+                    localStorage.setItem('live2d-pos', JSON.stringify({ top, left }));
+                    updateLive2DDefaultCSS(top, left);
+                  }
+
+                  document.addEventListener('mousemove', onMove);
+                  document.addEventListener('mouseup', onUp);
+                });
+              }
+
+              // hook iframe load (or run immediately if already loaded)
+              iframe.addEventListener('load', setupDragOnCanvas);
+              if (iframe.contentWindow.document.readyState === 'complete') {
+                setupDragOnCanvas();
+              }
             }
+
             
 
             // —— Reset logic ——
